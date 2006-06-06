@@ -3,8 +3,10 @@ use Wiki::Toolkit::TestConfig::Utilities;
 use Wiki::Toolkit;
 use URI::Escape;
 
+# Note - update the count in the skip block to match the number here
+#        we would put the number in a variable, but that doesn't seem to work
 use Test::More tests =>
-  (3 + 17 * $Wiki::Toolkit::TestConfig::Utilities::num_stores);
+  (3 + 18 * $Wiki::Toolkit::TestConfig::Utilities::num_stores);
 
 use_ok( "Wiki::Toolkit::Feed::RSS" );
 
@@ -21,7 +23,7 @@ my %stores = Wiki::Toolkit::TestConfig::Utilities->stores;
 my ($store_name, $store);
 while ( ($store_name, $store) = each %stores ) {
   SKIP: {
-      skip "$store_name storage backend not configured for testing", 17
+      skip "$store_name storage backend not configured for testing", 18
           unless $store;
 
       print "#\n##### TEST CONFIG: Store: $store_name\n#\n";
@@ -68,6 +70,9 @@ while ( ($store_name, $store) = each %stores ) {
 
       like( $feed, qr|<description>.*\[nou]</description>|,
             "username included in description" );
+
+      like( $feed, qr|<dc:subject>TestCategory1</dc:subject>|,
+            "dublin core subject contains category" );
 
       # Check that interwiki things are passed through right.
       $rss = Wiki::Toolkit::Feed::RSS->new(

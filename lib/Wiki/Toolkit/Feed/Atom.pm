@@ -2,13 +2,16 @@ package Wiki::Toolkit::Feed::Atom;
 
 use strict;
 
-use vars qw( $VERSION );
+use vars qw( @ISA $VERSION );
 $VERSION = '0.01';
 
 use POSIX 'strftime';
 use Time::Piece;
 use URI::Escape;
 use Carp qw( croak );
+
+use Wiki::Toolkit::Feed::Listing;
+@ISA = qw( Wiki::Toolkit::Feed::Listing );
 
 sub new
 {
@@ -46,11 +49,13 @@ sub new
   $self;
 }
 
-sub recent_changes
-{
-  my ($self, %args) = @_;
-
-  my $wiki = $self->{wiki};
+=item <generate_node_list_feed>
+  
+Generate and return an Atom feed for a list of nodes
+  
+=cut
+sub generate_node_list_feed {
+  my ($self,$atom_timestamp,@nodes) = @_;
 
   my $generator = '';
   
@@ -63,19 +68,6 @@ sub recent_changes
     $generator .= $self->{software_name} . "</generator>\n";
   }                          
 
-  my %criteria = (
-                   ignore_case => 1,
-                 );
-
-  # If we're not passed any parameters to limit the items returned, default to 15.
-  $args{days} ? $criteria{days}           = $args{days}
-              : $criteria{last_n_changes} = $args{items} || 15;
-  
-  $criteria{metadata_wasnt} = { major_change => 0 }     if $args{ignore_minor_edits};
-  $criteria{metadata_was}   = $args{filter_on_metadata} if $args{filter_on_metadata};
-
-  my @changes = $wiki->list_recent_changes(%criteria);
-
   my $subtitle = $self->{site_description}
                  ? '<subtitle>' . $self->{site_description} . "</subtitle>\n"
                  : '';
@@ -84,20 +76,20 @@ sub recent_changes
 
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <link href="}            . $self->{site_url}            . qq{" />
-  <title>}                 . $self->{site_name}           . qq{</title>
-  <link rel="self" href="} . $self->{atom_link}           . qq{" />
-  <updated>}               . $self->feed_timestamp(%args) . qq{</updated>
-  <id>}                    . $self->{site_url}            . qq{</id>
+  <link href="}            . $self->{site_url}     . qq{" />
+  <title>}                 . $self->{site_name}    . qq{</title>
+  <link rel="self" href="} . $self->{atom_link}    . qq{" />
+  <updated>}               . $atom_timestamp       . qq{</updated>
+  <id>}                    . $self->{site_url}     . qq{</id>
   $subtitle};
 
   my (@urls, @items);
 
-  foreach my $change (@changes)
+  foreach my $node (@nodes)
   {
-    my $node_name = $change->{name};
+    my $node_name = $node->{name};
 
-    my $item_timestamp = $change->{last_modified};
+    my $item_timestamp = $node->{last_modified};
     
     # Make a Time::Piece object.
     my $time = Time::Piece->strptime($item_timestamp, $self->{timestamp_fmt});
@@ -106,15 +98,15 @@ sub recent_changes
     
     $item_timestamp = $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
 
-    my $author      = $change->{metadata}{username}[0] || $change->{metadata}{host}[0] || 'Anonymous';
-    my $description = $change->{metadata}{comment}[0]  || 'No description given for change';
+    my $author      = $node->{metadata}{username}[0] || $node->{metadata}{host}[0] || 'Anonymous';
+    my $description = $node->{metadata}{comment}[0]  || 'No description given for node';
 
     $description .= " [$author]" if $author;
 
-    my $version = $change->{version};
+    my $version = $node->{version};
     my $status  = (1 == $version) ? 'new' : 'updated';
 
-    my $major_change = $change->{metadata}{major_change}[0];
+    my $major_change = $node->{metadata}{major_change}[0];
        $major_change = 1 unless defined $major_change;
     my $importance = $major_change ? 'major' : 'minor';
 
@@ -125,6 +117,21 @@ sub recent_changes
        $title =~ s/&/&amp;/g;
        $title =~ s/</&lt;/g;
        $title =~ s/>/&gt;/g;
+
+    # Pop the categories into atom:category elements (4.2.2)
+    # We can do this because the spec says:
+    #   "This specification assigns no meaning to the content (if any) 
+    #    of this element."
+    # TODO: Decide if we should include the "all categories listing" url
+    #        as the scheme (URI) attribute?
+    my $category_atom = "";
+    if($node->{metadata}->{category}) {
+        foreach my $cat (@{ $node->{metadata}->{category} }) {
+            $category_atom .= "    <category term=\"$cat\" />\n";
+        }
+    }
+
+    # TODO: Find an Atom equivalent of ModWiki, so we can include more info
     
     push @items, qq{
   <entry>
@@ -134,6 +141,7 @@ sub recent_changes
     <summary>$description</summary>
     <updated>$item_timestamp</updated>
     <author><name>$author</name></author>
+$category_atom
   </entry>
 };
 
@@ -144,23 +152,18 @@ sub recent_changes
   return $atom;   
 }
 
+=item B<feed_timestamp>
+
+Generate the timestamp for the Atom, based on the newest node (if available)
+
+=cut
 sub feed_timestamp
 {
-  my ($self, %args) = @_;
+  my ($self, $newest_node) = @_;
   
-  my %criteria = (ignore_case => 1);
-
-  $args{days} ? $criteria{days}           = $args{days}
-              : $criteria{last_n_changes} = $args{items} || 15;
-
-  $criteria{metadata_wasnt} = { major_change => 0 }     if $args{ignore_minor_edits};
-  $criteria{metadata_was}   = $args{filter_on_metadata} if $args{filter_on_metadata};
-
-  my @changes = $self->{wiki}->list_recent_changes(%criteria);
-
-  if ($changes[0]->{last_modified})
+  if ($newest_node->{last_modified})
   {
-    my $time = Time::Piece->strptime( $changes[0]->{last_modified}, $self->{timestamp_fmt} );
+    my $time = Time::Piece->strptime( $newest_node->{last_modified}, $self->{timestamp_fmt} );
 
     my $utc_offset = $self->{utc_offset};
     
@@ -178,7 +181,7 @@ __END__
 
 =head1 NAME
 
-  Wiki::Toolkit::Feed::Atom - A Wiki::Toolkit plugin to output RecentChanges RSS.
+  Wiki::Toolkit::Feed::Atom - A Wiki::Toolkit plugin to output RecentChanges Atom.
 
 =head1 DESCRIPTION
 

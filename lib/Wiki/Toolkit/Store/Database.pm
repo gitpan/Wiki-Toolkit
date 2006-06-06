@@ -12,6 +12,7 @@ use Carp qw( carp croak );
 use Digest::MD5 qw( md5_hex );
 
 $VERSION = '0.27';
+my $SCHEMA_VER = 9;
 
 # first, detect if Encode is available - it's not under 5.6. If we _are_
 # under 5.6, give up - we'll just have to hope that nothing explodes. This
@@ -114,6 +115,13 @@ sub _init {
                    . DBI->errstr;
     }
 
+    my ($cur_ver, $db_ver) = $self->schema_current;
+    if ($db_ver < $cur_ver) {
+        croak "Database schema version $db_ver is too old (need $cur_ver)";
+    } elsif ($db_ver > $cur_ver) {
+        croak "Database schema version $db_ver is too new (need $cur_ver)";
+    }
+
     return $self;
 }
 
@@ -122,7 +130,7 @@ sub _init {
 sub handle_pre_plugin_ret {
 	my ($running_total_ref,$result) = @_;
 
-	if($result == 0 || $result == undef) {
+	if(($result && $result == 0) || !$result) {
 		# No opinion, no need to change things
 	} elsif($result == -1 || $result == 1) {
 		# Increase or decrease as requested
@@ -228,8 +236,8 @@ sub _retrieve_node_data {
     my %metadata;
     while ( my ($type, $val) = $self->charset_decode( $sth->fetchrow_array ) ) {
         if ( defined $metadata{$type} ) {
-	    push @{$metadata{$type}}, $val;
-	} else {
+	        push @{$metadata{$type}}, $val;
+	    } else {
             $metadata{$type} = [ $val ];
         }
     }
@@ -334,6 +342,7 @@ sub node_exists {
         my $sth = $self->dbh->prepare( $sql );
         $sth->execute( $args{name} );
         my $found_name = $sth->fetchrow_array || "";
+        $sth->finish;
         return lc($found_name) eq lc($args{name}) ? 1 : 0;
     }
 }
@@ -703,6 +712,7 @@ sub rename_node {
 	my $sth = $dbh->prepare($sql);
 	$sth->execute($old_name);
 	my ($node_id) = $sth->fetchrow_array;
+    $sth->finish;
 
 
 	# If the formatter supports it, get a list of the internal
@@ -846,6 +856,7 @@ sub moderate_node {
     my $id_sth = $dbh->prepare($id_sql);
     $id_sth->execute($name);
 	my ($node_id) = $id_sth->fetchrow_array;
+    $id_sth->finish;
 
 	# Check what the current highest moderated version is
 	my $hv_sql = 
@@ -856,6 +867,7 @@ sub moderate_node {
 	my $hv_sth = $dbh->prepare($hv_sql);
 	$hv_sth->execute($node_id, "1") or croak $dbh->errstr;
 	my ($highest_mod_version) = $hv_sth->fetchrow_array;
+    $hv_sth->finish;
 	unless($highest_mod_version) { $highest_mod_version = 0; }
 
 	# Mark this version as moderated
@@ -927,6 +939,7 @@ sub set_node_moderation {
     my $id_sth = $dbh->prepare($id_sql);
     $id_sth->execute($name);
 	my ($node_id) = $id_sth->fetchrow_array;
+    $id_sth->finish;
 
 	# Mark it as requiring / not requiring moderation
 	my $mod_sql = 
@@ -977,6 +990,7 @@ sub delete_node {
     my $id_sth = $dbh->prepare($id_sql);
     $id_sth->execute($name);
 	my ($node_id) = $id_sth->fetchrow_array;
+    $id_sth->finish;
 
     # Trivial case - delete the whole node and all its history.
     unless ( $version ) {
@@ -1009,6 +1023,7 @@ sub delete_node {
     my $sth = $dbh->prepare( $sql );
     $sth->execute() or croak "Deletion failed: " . $dbh->errstr;
     my ($count) = $sth->fetchrow_array;
+    $sth->finish;
 	if($count == 1) {
 		# Only one version, so can do the non version delete
 	    return $self->delete_node( name=>$name, plugins=>$args{plugins} );
@@ -1414,6 +1429,115 @@ sub list_all_nodes {
     return ( map { $self->charset_decode( $_->[0] ) } (@$nodes) );
 }
 
+=item B<list_node_all_versions>
+
+  my @all_versions = $store->list_node_all_versions(
+										name => 'HomePage',
+										with_content => 1,
+										with_metadata => 0
+					 );
+
+Returns all the versions of a node, optionally including the content
+and metadata, as an array of hashes (newest versions first).
+
+=cut
+
+sub list_node_all_versions {
+    my ($self, %args) = @_;
+
+	my ($node_id,$name,$with_content,$with_metadata) = 
+			@args{ qw( node_id name with_content with_metadata ) };
+
+    my $dbh = $self->dbh;
+	my $sql;
+
+	# If they only gave us the node name, get the node id
+    unless ($node_id) {
+        $sql = "SELECT id FROM node WHERE name=" . $dbh->quote($name);
+        $node_id = $dbh->selectrow_array($sql);
+    }
+
+	# If they didn't tell us what they wanted / we couldn't find it, 
+	#  return an empty array
+	return () unless($node_id);
+
+
+	# Build up our SQL
+	$sql = "SELECT id, name, content.version, content.modified ";
+	if($with_content) {
+		$sql .= ", content.text ";
+	}
+	if($with_metadata) {
+		$sql .= ", metadata_type, metadata_value ";
+	}
+	$sql .= " FROM node INNER JOIN content ON (id = content.node_id) ";
+	if($with_metadata) {
+		$sql .= " LEFT OUTER JOIN metadata ON (id = metadata.node_id AND content.version = metadata.version) ";
+	}
+	$sql .= " WHERE id = ? ORDER BY content.version DESC";
+
+	# Do the fetch
+    my $sth = $dbh->prepare( $sql );
+    $sth->execute( $node_id );
+
+	# Need to hold onto the last row by hash ref, so we don't trash
+	#  it every time
+	my %first_data;
+	my $dataref = \%first_data;
+
+	# Haul out the data
+	my @versions;
+	while(my @results = $sth->fetchrow_array) {
+		my %data = %$dataref;
+
+		# Is it the same version as last time?
+		if(%data && $data{'version'} != $results[2]) {
+			# New version
+			push @versions, $dataref;
+			%data = ();
+		} else {
+			# Same version as last time, must be more metadata
+		}
+
+		# Grab the core data (will be the same on multi-row for metadata)
+		@data{ qw( node_id name version last_modified ) } = @results;
+
+		my $i = 4;
+		if($with_content) {
+			$data{'content'} = $results[$i];
+			$i++;
+		}
+		if($with_metadata) {
+			my ($m_type,$m_value) = @results[$i,($i+1)];
+			unless($data{'metadata'}) { $data{'metadata'} = {}; }
+
+			if($m_type) {
+				# If we have existing data, then put it into an array
+				if($data{'metadata'}->{$m_type}) {
+					unless(ref($data{'metadata'}->{$m_type}) eq "ARRAY") {
+						$data{'metadata'}->{$m_type} = [ $data{'metadata'}->{$m_type} ];
+					}
+					push @{$data{'metadata'}->{$m_type}}, $m_value;
+				} else {
+					# Otherwise, just store it in a normal string
+					$data{'metadata'}->{$m_type} = $m_value;
+				}
+			}
+		}
+
+		# Save where we've got to
+		$dataref = \%data;
+	}
+
+	# Handle final row saving
+	if($dataref) {
+		push @versions, $dataref;
+	}
+
+	# Return
+	return @versions;
+}
+
 =item B<list_nodes_by_metadata>
 
   # All documentation nodes.
@@ -1547,6 +1671,39 @@ sub list_unmoderated_nodes {
 
 	return @nodes;
 }
+
+=item B<schema_current>
+
+  my ($code_version, $db_version) = $store->schema_current;
+  if ($code_version == $db_version)
+      # Do stuff
+  } else {
+      # Bail
+  }
+
+=cut
+
+sub schema_current {
+    my $self = shift;
+    my $dbh = $self->dbh;
+    my $sth;
+    eval { $sth = $dbh->prepare("SELECT version FROM schema_info") };
+    if ($@) {
+        return ($SCHEMA_VER, 0);
+    }
+    eval { $sth->execute };
+    if ($@) {
+        return ($SCHEMA_VER, 0);
+    }
+    my $version;
+    eval { $version = $sth->fetchrow_array };
+    if ($@) {
+        return ($SCHEMA_VER, 0);
+    } else {
+        return ($SCHEMA_VER, $version);
+    }
+}
+
 
 =item B<dbh>
 

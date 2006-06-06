@@ -10,6 +10,7 @@ bin/wiki-toolkit-setupdb
 bin/user-setup-mysql-dbixfts.pl
 lib/Wiki/Toolkit/Extending.pod
 lib/Wiki/Toolkit/Feed/Atom.pm
+lib/Wiki/Toolkit/Feed/Listing.pm
 lib/Wiki/Toolkit/Feed/RSS.pm
 lib/Wiki/Toolkit/Formatter/Default.pm
 lib/Wiki/Toolkit/Formatter/Multiple.pm
@@ -54,6 +55,8 @@ t/019_recent_changes_case.t
 t/020_node_exists_case_insensitive.t
 t/021_moderation.t
 t/022_list_unmoderated.t
+t/025_list_node_all_versions.t
+t/026_schema_current.t
 t/040_rename.t
 t/050_mysql_store.t
 t/051_pg_store.t
@@ -64,12 +67,14 @@ t/102_multiple_formatter.t
 t/150_plugins.t
 t/151_plugin_methods.t
 t/152_pre_plugin_approval.t
-t/297_feed_rss_recentchanges_setup.t
-t/298_feed_rss_recentchanges_add_test_data.t
-t/299_feed_rss_recentchanges.t
+t/295_feed_rss_recentchanges_setup.t
+t/296_feed_rss_recentchanges_add_test_data.t
+t/297_feed_rss_recentchanges.t
+t/298_feed_rss_node_all_versions.t
 t/300_feed_atom_setup.t
 t/301_feed_atom_add_test_data.t
 t/302_feed_atom_recentchanges.t
+t/303_feed_atom_node_all_versions.t
 t/lib/Wiki/Toolkit/Plugin/Bar.pm
 t/lib/Wiki/Toolkit/Plugin/Foo.pm
 

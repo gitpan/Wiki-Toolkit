@@ -3,7 +3,7 @@ package Wiki::Toolkit;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.69_03';
+$VERSION = '0.70';
 
 use Carp qw(croak carp);
 use Digest::MD5 "md5_hex";
@@ -290,7 +290,7 @@ sub rename_node {
 
     my $ret = $self->store->rename_node( %args );
 
-	if($ret == -1) { return $ret; }
+	if($ret && $ret == -1) { return $ret; }
 	return 1;
 }
 
@@ -520,6 +520,32 @@ sub list_recent_changes {
 sub list_unmoderated_nodes {
     my ($self, @args) = @_;
     $self->store->list_unmoderated_nodes( @args );
+}
+
+=item B<list_node_all_versions>
+
+  my @versions = $wiki->list_node_all_versions("HomePage");
+
+  my @versions = $wiki->list_node_all_versions(
+                                                name => 'HomePage',
+                                                with_content => 1,
+                                                with_metadata => 0
+                 );
+
+Returns all the versions of a node, optionally including the content
+and metadata, as an array of hashes (newest versions first).
+=cut
+sub list_node_all_versions {
+    my ($self,@argsarray) = @_;
+
+    my %args;
+    if(scalar @argsarray == 1) {
+        $args{'name'} = $argsarray[0];
+    } else {
+        %args = @argsarray;
+    }
+
+    return $self->store->list_node_all_versions(%args);
 }
 
 =item B<node_exists>

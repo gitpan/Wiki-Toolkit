@@ -3,8 +3,10 @@ use Wiki::Toolkit::TestConfig::Utilities;
 use Wiki::Toolkit;
 use URI::Escape;
 
+# Note - update the count in the skip block to match the number here
+#        we would put the number in a variable, but that doesn't seem to work
 use Test::More tests =>
-  (3 + 11 * $Wiki::Toolkit::TestConfig::Utilities::num_stores);
+  (3 + 12 * $Wiki::Toolkit::TestConfig::Utilities::num_stores);
 
 use_ok( "Wiki::Toolkit::Feed::Atom" );
 
@@ -21,7 +23,7 @@ my %stores = Wiki::Toolkit::TestConfig::Utilities->stores;
 my ($store_name, $store);
 while ( ($store_name, $store) = each %stores ) {
   SKIP: {
-      skip "$store_name storage backend not configured for testing", 11
+      skip "$store_name storage backend not configured for testing", 12
           unless $store;
 
       print "#\n##### TEST CONFIG: Store: $store_name\n#\n";
@@ -60,6 +62,10 @@ while ( ($store_name, $store) = each %stores ) {
 
       like( $feed, qr|<summary>.*\[nou]</summary>|,
             "username included in summary" );
+
+      # Check we also have some categories
+      like( $feed, qr|<category term="TestCategory1" />|,
+            "contains categories" );
 
       # Test the 'items' parameter.
       $feed = $atom->recent_changes( items => 2 );

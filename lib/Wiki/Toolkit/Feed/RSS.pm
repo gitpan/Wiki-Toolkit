@@ -2,7 +2,7 @@ package Wiki::Toolkit::Feed::RSS;
 
 use strict;
 
-use vars qw( $VERSION );
+use vars qw( @ISA $VERSION );
 $VERSION = '0.10';
 
 use POSIX 'strftime';
@@ -10,77 +10,54 @@ use Time::Piece;
 use URI::Escape;
 use Carp qw( croak );
 
+use Wiki::Toolkit::Feed::Listing;
+@ISA = qw( Wiki::Toolkit::Feed::Listing );
+
 sub new
 {
-  my $class = shift;
-  my $self  = {};
-  bless $self, $class;
+    my $class = shift;
+    my $self  = {};
+    bless $self, $class;
 
-  my %args = @_;
-  my $wiki = $args{wiki};
+    my %args = @_;
+    my $wiki = $args{wiki};
 
-  unless ($wiki && UNIVERSAL::isa($wiki, 'Wiki::Toolkit'))
-  {
-    croak 'No Wiki::Toolkit object supplied';
-  }
+    unless ($wiki && UNIVERSAL::isa($wiki, 'Wiki::Toolkit'))
+    {
+        croak 'No Wiki::Toolkit object supplied';
+    }
   
-  $self->{wiki} = $wiki;
+    $self->{wiki} = $wiki;
   
-  # Mandatory arguments.
-  foreach my $arg (qw/site_name site_url make_node_url recent_changes_link/)
-  {
-    croak "No $arg supplied" unless $args{$arg};
-    $self->{$arg} = $args{$arg};
-  }
+    # Mandatory arguments.
+    foreach my $arg (qw/site_name site_url make_node_url recent_changes_link/)
+    {
+        croak "No $arg supplied" unless $args{$arg};
+        $self->{$arg} = $args{$arg};
+    }
   
-  # Optional arguments.
-  foreach my $arg (qw/site_description interwiki_identifier make_diff_url make_history_url 
-                      software_name software_version software_homepage/)
-  {
-    $self->{$arg} = $args{$arg} || '';
-  }
+    # Optional arguments.
+    foreach my $arg (qw/site_description interwiki_identifier make_diff_url make_history_url 
+                        software_name software_version software_homepage/)
+    {
+        $self->{$arg} = $args{$arg} || '';
+    }
 
-  $self->{timestamp_fmt} = $Wiki::Toolkit::Store::Database::timestamp_fmt;
-  $self->{utc_offset} = strftime "%z", localtime;
-  $self->{utc_offset} =~ s/(..)(..)$/$1:$2/;
-  
-  $self;
+    $self->{timestamp_fmt} = $Wiki::Toolkit::Store::Database::timestamp_fmt;
+    $self->{utc_offset} = strftime "%z", localtime;
+    $self->{utc_offset} =~ s/(..)(..)$/$1:$2/;
+
+    $self;
 }
 
-sub recent_changes
-{
-  my ($self, %args) = @_;
 
-  my $wiki = $self->{wiki};
+=item <generate_node_list_feed>
 
-  # If we're not passed any parameters to limit the items returned, default to 15.
+Generate and return an RSS feed for a list of nodes
 
-  my %criteria = (
-                   ignore_case => 1,
-                 );
-
-  if ($args{days})
-  {
-    $criteria{days} = $args{days};
-  }
-  else
-  {
-    $criteria{last_n_changes} = $args{items} || 15;
-  }
-  
-  if ($args{ignore_minor_edits})
-  {
-    $criteria{metadata_wasnt} = { major_change => 0 };
-  }
-  
-  if ($args{filter_on_metadata})
-  {
-    $criteria{metadata_was} = $args{filter_on_metadata};
-  }
-
-  my @changes = $wiki->list_recent_changes(%criteria);
-
-  my $rss_timestamp = $self->rss_timestamp(%args);
+=cut
+sub generate_node_list_feed {
+  my ($self,$feed_timestamp,@nodes) = @_;
 
   #"http://purl.org/rss/1.0/modules/wiki/"
   my $rss = qq{<?xml version="1.0" encoding="UTF-8"?>
@@ -129,16 +106,16 @@ if ($self->{software_name})
 $rss .= qq{<title>}   . $self->{site_name}            . qq{</title>
 <link>}               . $self->{recent_changes_link}  . qq{</link>
 <description>}        . $self->{site_description}     . qq{</description>
-<dc:date>}            . $rss_timestamp                . qq{</dc:date>
+<dc:date>}            . $feed_timestamp                . qq{</dc:date>
 <modwiki:interwiki>}     . $self->{interwiki_identifier} . qq{</modwiki:interwiki>};
 
   my (@urls, @items);
 
-  foreach my $change (@changes)
+  foreach my $node (@nodes)
   {
-    my $node_name = $change->{name};
+    my $node_name = $node->{name};
 
-    my $timestamp = $change->{last_modified};
+    my $timestamp = $node->{last_modified};
     
     # Make a Time::Piece object.
     my $time = Time::Piece->strptime($timestamp, $self->{timestamp_fmt});
@@ -147,15 +124,15 @@ $rss .= qq{<title>}   . $self->{site_name}            . qq{</title>
     
     $timestamp = $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
 
-    my $author      = $change->{metadata}{username}[0] || $change->{metadata}{host}[0] || '';
-    my $description = $change->{metadata}{comment}[0]  || '';
+    my $author      = $node->{metadata}{username}[0] || $node->{metadata}{host}[0] || '';
+    my $description = $node->{metadata}{comment}[0]  || '';
 
     $description .= " [$author]" if $author;
 
-    my $version = $change->{version};
+    my $version = $node->{version};
     my $status  = (1 == $version) ? 'new' : 'updated';
 
-    my $major_change = $change->{metadata}{major_change}[0];
+    my $major_change = $node->{metadata}{major_change}[0];
        $major_change = 1 unless defined $major_change;
     my $importance = $major_change ? 'major' : 'minor';
 
@@ -188,6 +165,17 @@ $rss .= qq{<title>}   . $self->{site_name}            . qq{</title>
        $title =~ s/&/&amp;/g;
        $title =~ s/</&lt;/g;
        $title =~ s/>/&gt;/g;
+
+    # Pop the categories into dublin core subject elements
+    #  (http://dublincore.org/usage/terms/history/#subject-004)
+    # TODO: Decide if we should include the "all categories listing" url
+    #        as the scheme (URI) attribute?
+    my $category_rss = "";
+    if($node->{metadata}->{category}) {
+        foreach my $cat (@{ $node->{metadata}->{category} }) {
+            $category_rss .= "  <dc:subject>$cat</dc:subject>\n";
+        }
+    }
     
     push @items, qq{
 <item rdf:about="$url">
@@ -202,6 +190,7 @@ $rss .= qq{<title>}   . $self->{site_name}            . qq{</title>
   <modwiki:version>$version</modwiki:version>
   <modwiki:history>$history_url</modwiki:history>
   <rdfs:seeAlso rdf:resource="$rdf_url" />
+$category_rss
 </item>
 };
   }
@@ -219,45 +208,38 @@ $rss .= qq{<title>}   . $self->{site_name}            . qq{</title>
   return $rss;   
 }
 
-sub rss_timestamp
+=item B<feed_timestamp>
+
+Generate the timestamp for the RSS, based on the newest node (if available)
+
+=cut
+sub feed_timestamp
 {
-  my ($self, %args) = @_;
-  
-  my %criteria = (ignore_case => 1);
+    my ($self, $newest_node) = @_;
 
-  if ($args{days})
-  {
-    $criteria{days} = $args{days};
-  }
-  else
-  {
-    $criteria{last_n_changes} = $args{items} || 15;
-  }
-  
-  if ($args{ignore_minor_edits})
-  {
-    $criteria{metadata_wasnt} = { major_change => 0 };
-  }
-  
-  if ($args{filter_on_metadata})
-  {
-    $criteria{metadata_was} = $args{filter_on_metadata};
-  }
+    if ($newest_node->{last_modified})
+    {
+        my $time = Time::Piece->strptime( $newest_node->{last_modified}, $self->{timestamp_fmt} );
 
-  my @changes = $self->{wiki}->list_recent_changes(%criteria);
+        my $utc_offset = $self->{utc_offset};
 
-  if ($changes[0]->{last_modified})
-  {
-    my $time = Time::Piece->strptime( $changes[0]->{last_modified}, $self->{timestamp_fmt} );
+        return $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
+    }
+    else
+    {
+        return '1970-01-01T00:00:00+0000';
+    }
+}
 
-    my $utc_offset = $self->{utc_offset};
-    
-    return $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
-  }
-  else
-  {
-    return '1970-01-01T00:00:00+0000';
-  }
+# Compatibility method - use feed_timestamp with a node instead
+sub rss_timestamp {
+    my ($self, %args) = @_;
+
+    warn("Old style method used - please convert to calling feed_timestamp with a node!");
+    my $feed_timestamp = $self->feed_timestamp(
+                              $self->fetch_newest_for_recently_changed(%args)
+    );
+    return $feed_timestamp;
 }
 
 1;
@@ -417,9 +399,9 @@ all of the following metadata when calling C<write_node>:
 
 =back
 
-=head2 C<rss_timestamp()>
+=head2 C<feed_timestamp()>
 
-  print $rss->rss_timestamp();
+  print $rss->feed_timestamp();
 
 Returns the timestamp of the feed in POSIX::strftime style ("Tue, 29 Feb 2000 
 12:34:56 GMT"), which is equivalent to the timestamp of the most recent item 
