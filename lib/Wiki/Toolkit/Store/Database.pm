@@ -1415,18 +1415,39 @@ sub _find_recent_changes_by_criteria {
 =item B<list_all_nodes>
 
   my @nodes = $store->list_all_nodes();
+  print "First node is $nodes[0]\n";
+
+  my @nodes = $store->list_all_nodes( with_details=> 1 );
+  print "First node is ".$nodes[0]->{'name'}." at version ".$nodes[0]->{'version'}."\n";
 
 Returns a list containing the name of every existing node.  The list
 won't be in any kind of order; do any sorting in your calling script.
 
+Optionally also returns the id, version and moderation flag.
+
 =cut
 
 sub list_all_nodes {
-    my $self = shift;
+    my ($self,%args) = @_;
     my $dbh = $self->dbh;
-    my $sql = "SELECT name FROM node;";
-    my $nodes = $dbh->selectall_arrayref($sql); 
-    return ( map { $self->charset_decode( $_->[0] ) } (@$nodes) );
+	my @nodes;
+
+	if($args{with_details}) {
+		my $sql = "SELECT id, name, version, moderate FROM node;";
+		my $sth = $dbh->prepare( $sql );
+		$sth->execute();
+
+		while(my @results = $sth->fetchrow_array) {
+			my %data;
+			@data{ qw( node_id name version moderate ) } = @results;
+			push @nodes, \%data;
+		}
+	} else {
+		my $sql = "SELECT name FROM node;";
+		my $raw_nodes = $dbh->selectall_arrayref($sql); 
+		@nodes = ( map { $self->charset_decode( $_->[0] ) } (@$raw_nodes) );
+	}
+	return @nodes;
 }
 
 =item B<list_node_all_versions>
@@ -1590,31 +1611,159 @@ sub list_nodes_by_metadata {
     my $sth = $dbh->prepare( $sql );
     $sth->execute( $type, $self->charset_encode($value) );
     my @nodes;
-    while ( my ($node) = $sth->fetchrow_array ) {
+    while ( my ($id, $node) = $sth->fetchrow_array ) {
         push @nodes, $node;
     }
     return @nodes;
 }
 
+=item B<list_nodes_by_missing_metadata>
+Returns nodes where either the metadata doesn't exist, or is blank
+
+Unlike list_nodes_by_metadata(), the metadata value is optional.
+
+  # All nodes missing documentation
+  my @nodes = $store->list_nodes_by_missing_metadata(
+      metadata_type  => "category",
+      metadata_value => "documentation",
+      ignore_case    => 1,   # optional but recommended (see below)
+  );
+
+  # All nodes which don't have a latitude defined
+  my @nodes = $store->list_nodes_by_missing_metadata(
+      metadata_type  => "latitude"
+  );
+=cut
+sub list_nodes_by_missing_metadata {
+    my ($self, %args) = @_;
+    my ( $type, $value ) = @args{ qw( metadata_type metadata_value ) };
+    return () unless $type;
+
+    my $dbh = $self->dbh;
+    if ( $args{ignore_case} ) {
+        $type  = lc( $type  );
+        $value = lc( $value );
+    }
+
+	my @nodes;
+
+	# If the don't want to match by value, then we can do it with 
+	#  a LEFT OUTER JOIN, and either NULL or LENGTH() = 0
+	if( ! $value ) {
+		my $sql = $self->_get_list_by_missing_metadata_sql( 
+										ignore_case => $args{ignore_case}
+		      );
+		my $sth = $dbh->prepare( $sql );
+		$sth->execute( $type );
+
+		while ( my ($id, $node) = $sth->fetchrow_array ) {
+        	push @nodes, $node;
+		}
+    } else {
+		# To find those without the value in this case would involve
+		#  some seriously brain hurting SQL.
+		# So, cheat - find those with, and return everything else
+		my @with = $self->list_nodes_by_metadata(%args);
+		my %with_hash;
+		foreach my $node (@with) { $with_hash{$node} = 1; }
+
+		my @all_nodes = $self->list_all_nodes();
+		foreach my $node (@all_nodes) {
+			unless($with_hash{$node}) {
+				push @nodes, $node;
+			}
+		}
+	}
+
+    return @nodes;
+}
+
+=item B<_get_list_by_metadata_sql>
+Return the SQL to do a match by metadata. Should expect the metadata type
+as the first SQL parameter, and the metadata value as the second.
+
+If possible, should take account of $args{ignore_case}
+=cut
 sub _get_list_by_metadata_sql {
-    # can be over-ridden by database-specific subclasses
-    return "SELECT node.name "
-		 . "FROM node "
-		 . "INNER JOIN metadata "
-		 . "	ON (node.id = metadata.node_id) "
-		 . "WHERE node.version=metadata.version "
-		 . "AND metadata.metadata_type = ? "
-		 . "AND metadata.metadata_value = ? ";
+	# SQL 99 version
+    #  Can be over-ridden by database-specific subclasses
+    my ($self, %args) = @_;
+    if ( $args{ignore_case} ) {
+        return "SELECT node.id, node.name "
+             . "FROM node "
+             . "INNER JOIN metadata "
+             . "   ON (node.id = metadata.node_id "
+             . "       AND node.version=metadata.version) "
+             . "WHERE ". $self->_get_lowercase_compare_sql("metadata.metadata_type")
+             . " AND ". $self->_get_lowercase_compare_sql("metadata.metadata_value");
+    } else {
+        return "SELECT node.id, node.name "
+             . "FROM node "
+             . "INNER JOIN metadata "
+             . "   ON (node.id = metadata.node_id "
+             . "       AND node.version=metadata.version) "
+             . "WHERE ". $self->_get_casesensitive_compare_sql("metadata.metadata_type")
+             . " AND ". $self->_get_casesensitive_compare_sql("metadata.metadata_value");
+    }
+}
+
+=item B<_get_list_by_missing_metadata_sql>
+Return the SQL to do a match by missing metadata. Should expect the metadata 
+type as the first SQL parameter.
+
+If possible, should take account of $args{ignore_case}
+=cut
+sub _get_list_by_missing_metadata_sql {
+	# SQL 99 version
+    #  Can be over-ridden by database-specific subclasses
+    my ($self, %args) = @_;
+
+	my $sql = "";
+    if ( $args{ignore_case} ) {
+        $sql = "SELECT node.id, node.name "
+             . "FROM node "
+             . "LEFT OUTER JOIN metadata "
+             . "   ON (node.id = metadata.node_id "
+             . "       AND node.version=metadata.version "
+             . "       AND ". $self->_get_lowercase_compare_sql("metadata.metadata_type")
+			 . ")";
+    } else {
+        $sql = "SELECT node.id, node.name "
+             . "FROM node "
+             . "LEFT OUTER JOIN metadata "
+             . "   ON (node.id = metadata.node_id "
+             . "       AND node.version=metadata.version "
+             . "       AND ". $self->_get_casesensitive_compare_sql("metadata.metadata_type")
+             . ")";
+    }
+
+	$sql .= "WHERE (metadata.metadata_value IS NULL OR LENGTH(metadata.metadata_value) = 0) ";
+	return $sql;
+}
+
+sub _get_lowercase_compare_sql {
+	my ($self, $column) = @_;
+	# SQL 99 version
+    #  Can be over-ridden by database-specific subclasses
+	return "lower($column) = ?";
+}
+sub _get_casesensitive_compare_sql {
+	my ($self, $column) = @_;
+	# SQL 99 version
+    #  Can be over-ridden by database-specific subclasses
+	return "$column = ?";
 }
 
 sub _get_comparison_sql {
     my ($self, %args) = @_;
-    # can be over-ridden by database-specific subclasses
+	# SQL 99 version
+    #  Can be over-ridden by database-specific subclasses
     return "$args{thing1} = $args{thing2}";
 }
 
 sub _get_node_exists_ignore_case_sql {
-    # can be over-ridden by database-specific subclasses
+	# SQL 99 version
+    #  Can be over-ridden by database-specific subclasses
     return "SELECT name FROM node WHERE name = ? ";
 }
 

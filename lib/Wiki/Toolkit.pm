@@ -3,7 +3,7 @@ package Wiki::Toolkit;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.70';
+$VERSION = '0.71';
 
 use Carp qw(croak carp);
 use Digest::MD5 "md5_hex";
@@ -398,6 +398,29 @@ sub list_nodes_by_metadata {
     $self->store->list_nodes_by_metadata( @args );
 }
 
+=item B<list_nodes_by_missing_metadata>
+Returns nodes where either the metadata doesn't exist, or is blank
+    
+Unlike list_nodes_by_metadata(), the metadata value is optional (the
+metadata type is required).
+
+  # All nodes missing documentation
+  my @nodes = $store->list_nodes_by_missing_metadata(
+      metadata_type  => "category",
+      metadata_value => "documentation",
+      ignore_case    => 1,   # optional but recommended (see below)
+  );
+
+  # All nodes which don't have a latitude defined
+  my @nodes = $store->list_nodes_by_missing_metadata(
+      metadata_type  => "latitude"
+  );
+=cut
+sub list_nodes_by_missing_metadata {
+    my ($self, @args) = @_;
+    $self->store->list_nodes_by_missing_metadata( @args );
+}
+
 =item B<list_recent_changes>
 
   # Nodes changed in last 7 days - each node listed only once.
@@ -571,6 +594,26 @@ is recommended.
 sub node_exists {
     my ($self, @args) = @_;
     $self->store->node_exists( @args );
+}
+
+=item B<node_required_moderation>
+
+  my $needs = $wiki->node_required_moderation( "Wombat Defenestration" );
+
+Returns true if the node exists and requires moderation, and false otherwise.
+
+=cut
+
+sub node_required_moderation {
+    my ($self, @args) = @_;
+    my %node = $self->retrieve_node(@args);
+
+    # Return false if it doesn't exist
+    unless(%node) { return 0; }
+    unless($node{node_requires_moderation}) { return 0; }
+
+    # Otherwise return the state of the flag
+    return $node{node_requires_moderation};
 }
 
 =item B<delete_node>

@@ -93,26 +93,9 @@ sub _unlock_node {
     return $unlocked;
 }
 
-sub _get_list_by_metadata_sql {
-    my ($self, %args) = @_;
-    if ( $args{ignore_case} ) {
-        return "SELECT node.name "
-             . "FROM node "
-             . "INNER JOIN metadata "
-             . "   ON (node.id = metadata.node_id) "
-             . "WHERE node.version=metadata.version "
-             . "AND lower(metadata.metadata_type) = ? "
-             . "AND lower(metadata.metadata_value) = ? ";
-    } else {
-        return "SELECT node.name "
-             . "FROM node "
-             . "INNER JOIN metadata "
-             . "   ON (node.id = metadata.node_id) "
-             . "WHERE node.version=metadata.version "
-             . "AND metadata.metadata_type = ? "
-             . "AND metadata.metadata_value = ? ";
-    }
+sub _get_casesensitive_compare_sql {
+    my ($self, $column) = @_;
+    return "BINARY $column = ?";
 }
-
 
 1;

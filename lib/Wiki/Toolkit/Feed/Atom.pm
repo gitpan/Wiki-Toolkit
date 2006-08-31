@@ -30,11 +30,15 @@ sub new
   $self->{wiki} = $wiki;
   
   # Mandatory arguments.
-  foreach my $arg (qw/site_name site_url make_node_url recent_changes_link atom_link/)
+  foreach my $arg (qw/site_name site_url make_node_url atom_link/)
   {
     croak "No $arg supplied" unless $args{$arg};
     $self->{$arg} = $args{$arg};
   }
+
+  # Must-supply-one-of arguments
+  my %mustoneof = ( 'html_equiv_link' => ['html_equiv_link','recent_changes_link'] );
+  $self->handle_supply_one_of(\%mustoneof,\%args);
   
   # Optional arguments.
   foreach my $arg (qw/site_description software_name software_version software_homepage/)
@@ -46,16 +50,29 @@ sub new
   $self->{utc_offset} = strftime "%z", localtime;
   $self->{utc_offset} =~ s/(..)(..)$/$1:$2/;
   
+  # Escape any &'s in the urls
+  foreach my $key qw(site_url atom_link) {
+     my @ands = ($self->{$key} =~ /(\&.{1,6})/g);
+     foreach my $and (@ands) {
+        if($and ne "&amp;") {
+            my $new_and = $and;
+            $new_and =~ s/\&/\&amp;/;
+            $self->{$key} =~ s/$and/$new_and/;
+        }
+     }
+  }
+
   $self;
 }
 
-=item <generate_node_list_feed>
-  
-Generate and return an Atom feed for a list of nodes
-  
+=item <build_feed_start>
+
+Internal method, to build all the stuff that will go at the start of a feed.
+Outputs the feed header, and initial feed info.
+
 =cut
-sub generate_node_list_feed {
-  my ($self,$atom_timestamp,@nodes) = @_;
+sub build_feed_start {
+  my ($self,$atom_timestamp) = @_;
 
   my $generator = '';
   
@@ -74,7 +91,11 @@ sub generate_node_list_feed {
                  
   my $atom = qq{<?xml version="1.0" encoding="UTF-8"?>
 
-<feed xmlns="http://www.w3.org/2005/Atom">
+<feed 
+ xmlns         = "http://www.w3.org/2005/Atom"
+ xmlns:geo     = "http://www.w3.org/2003/01/geo/wgs84_pos#"
+ xmlns:space   = "http://frot.org/space/0.1/"
+>
 
   <link href="}            . $self->{site_url}     . qq{" />
   <title>}                 . $self->{site_name}    . qq{</title>
@@ -82,6 +103,30 @@ sub generate_node_list_feed {
   <updated>}               . $atom_timestamp       . qq{</updated>
   <id>}                    . $self->{site_url}     . qq{</id>
   $subtitle};
+  
+  return $atom;
+}
+
+=item <build_feed_end>
+
+Internal method, to build all the stuff that will go at the end of a feed.
+
+=cut
+sub build_feed_end {
+    my ($self,$feed_timestamp) = @_;
+
+    return "</feed>\n";
+}
+
+=item <generate_node_list_feed>
+  
+Generate and return an Atom feed for a list of nodes
+  
+=cut
+sub generate_node_list_feed {
+  my ($self,$atom_timestamp,@nodes) = @_;
+
+  my $atom = $self->build_feed_start($atom_timestamp);
 
   my (@urls, @items);
 
@@ -131,7 +176,11 @@ sub generate_node_list_feed {
         }
     }
 
+    # Include geospacial data, if we have it
+    my $geo_atom = $self->format_geo($node->{metadata});
+
     # TODO: Find an Atom equivalent of ModWiki, so we can include more info
+
     
     push @items, qq{
   <entry>
@@ -142,37 +191,86 @@ sub generate_node_list_feed {
     <updated>$item_timestamp</updated>
     <author><name>$author</name></author>
 $category_atom
+$geo_atom
   </entry>
 };
 
   }
   
-  $atom .= join('', @items) . "\n</feed>\n";
+  $atom .= join('', @items) . "\n";
+  $atom .= $self->build_feed_end($atom_timestamp);
+
+  return $atom;   
+}
+
+=item <generate_node_name_distance_feed>
+  
+Generate a very cut down atom feed, based just on the nodes, their locations
+(if given), and their distance from a reference location (if given).
+
+Typically used on search feeds.
+  
+=cut
+sub generate_node_name_distance_feed {
+  my ($self,$atom_timestamp,@nodes) = @_;
+
+  my $atom = $self->build_feed_start($atom_timestamp);
+
+  my (@urls, @items);
+
+  foreach my $node (@nodes)
+  {
+    my $node_name = $node->{name};
+
+    my $url = $self->{make_node_url}->($node_name);
+
+    # make XML-clean
+    my $title =  $node_name;
+       $title =~ s/&/&amp;/g;
+       $title =~ s/</&lt;/g;
+       $title =~ s/>/&gt;/g;
+
+    # What location stuff do we have?
+    my $geo_atom = $self->format_geo($node);
+
+    push @items, qq{
+  <entry>
+    <title>$title</title>
+    <link href="$url" />
+    <id>$url</id>
+$geo_atom
+  </entry>
+};
+
+  }
+  
+  $atom .= join('', @items) . "\n";
+  $atom .= $self->build_feed_end($atom_timestamp);
 
   return $atom;   
 }
 
 =item B<feed_timestamp>
 
-Generate the timestamp for the Atom, based on the newest node (if available)
+Generate the timestamp for the Atom, based on the newest node (if available).
+Will return a timestamp for now if no node dates are available
 
 =cut
 sub feed_timestamp
 {
   my ($self, $newest_node) = @_;
   
+  my $time;
   if ($newest_node->{last_modified})
   {
-    my $time = Time::Piece->strptime( $newest_node->{last_modified}, $self->{timestamp_fmt} );
+    $time = Time::Piece->strptime( $newest_node->{last_modified}, $self->{timestamp_fmt} );
+  } else {
+    $time = localtime;
+  }
 
-    my $utc_offset = $self->{utc_offset};
+  my $utc_offset = $self->{utc_offset};
     
-    return $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
-  }
-  else
-  {
-    return '1970-01-01T00:00:00+0000';
-  }
+  return $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
 }
 
 1;
@@ -209,7 +307,7 @@ This module is a straight port of L<Wiki::Toolkit::Feed::RSS>.
                              my ($node_name, $version) = @_;
                              return 'http://example.com/?id=' . uri_escape($node_name) . ';version=' . uri_escape($version);
                            },
-    recent_changes_link => 'http://example.com/?RecentChanges',
+    html_equiv_link => 'http://example.com/?RecentChanges',
     atom_link => 'http://example.com/?action=rc;format=atom',
   );
 
@@ -230,7 +328,7 @@ This module is a straight port of L<Wiki::Toolkit::Feed::RSS>.
                               my ($node_name, $version) = @_;
                               return 'http://example.com/?id=' . uri_escape($node_name) . ';version=' . uri_escape($version);
                             },
-    recent_changes_link  => 'http://example.com/?RecentChanges',,
+    html_equiv_link  => 'http://example.com/?RecentChanges',,
     atom_link => 'http://example.com/?action=rc;format=atom',
 
     # Optional arguments:
@@ -255,7 +353,7 @@ The mandatory arguments are:
 
 =item * make_node_url
 
-=item * recent_changes_link
+=item * html_equiv_link or recent_changes_link
 
 =item * atom_link
 
