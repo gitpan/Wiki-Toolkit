@@ -14,16 +14,16 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 422381f8d8c02262a675a3794641008c557ab0a6 Changes
+SHA1 2e2e111607f9c5f590d0566b98407d8ef68dda76 Changes
 SHA1 eef58741b82a1f029e62cc854755dfc2f4ada7b5 INSTALL
 SHA1 40a1247099202a69865ec7e8d4f6aa8c1f5add30 MANIFEST
-SHA1 8c234825e7c535c2c1559f128eb6382cbab222ed META.yml
-SHA1 e496bff535494fdfc59dceb8b1e8cf1da053af67 Makefile.PL
+SHA1 1ceed25953ee21ff227096f38cebe7db088a1f50 META.yml
+SHA1 1413d73d15555a893e547198ce5db73cfac188e4 Makefile.PL
 SHA1 0c94c05497c37c21a91b89eb94ba2ae2b6c9199d README
 SHA1 b609af99f3e2315da9a65c50f0b6744d61bcd0bc bin/user-setup-mysql-dbixfts.pl
 SHA1 923d4ad6bebd4a80486fa824c1d819043f841dfc bin/wiki-toolkit-rename-node
 SHA1 e85e2de45e102ab775467231918bdadd773ed2f0 bin/wiki-toolkit-setupdb
-SHA1 b7b9017b8fff3f04bd7c572bdc219591d00b6196 lib/Wiki/Toolkit.pm
+SHA1 f7b285e5760f8bb114c2c6b1605eb7a12d94bac2 lib/Wiki/Toolkit.pm
 SHA1 d94d5a76e824fa260e726fbcd256d7b8709d8f00 lib/Wiki/Toolkit/Extending.pod
 SHA1 5570b600d3bfa4fe130a7b3ee2661c669ca36b3d lib/Wiki/Toolkit/Feed/Atom.pm
 SHA1 3c773ce69c9e2d57421c46b0c28da07cea0b897c lib/Wiki/Toolkit/Feed/Listing.pm
@@ -97,7 +97,7 @@ SHA1 5ba3e2fa69ad7ca30aa726289275e1e2f7220fc6 t/lib/Wiki/Toolkit/Plugin/Foo.pm
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.5 (GNU/Linux)
 
-iD8DBQFE9pJlYzuFKFF44qURAt4oAKCpcVG+ZBGSwg5s0r6pqlHYA9VbtwCfSAfl
-aTehTXEv0wHNfa9lrtgqZ6Y=
-=2lnr
+iD8DBQFFClz/YzuFKFF44qURArjVAJ45P26iZxs476vyAQvkkHTFFrQUHgCfV3uz
+pjpK2J5seVv0sDPCY46Q1wU=
+=wX0i
 -----END PGP SIGNATURE-----
