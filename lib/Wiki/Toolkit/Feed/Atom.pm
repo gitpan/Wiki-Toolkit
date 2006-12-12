@@ -41,9 +41,14 @@ sub new
   $self->handle_supply_one_of(\%mustoneof,\%args);
   
   # Optional arguments.
-  foreach my $arg (qw/site_description software_name software_version software_homepage/)
+  foreach my $arg (qw/site_description software_name software_version software_homepage encoding/)
   {
     $self->{$arg} = $args{$arg} || '';
+  }
+
+  # Supply some defaults, if a blank string isn't what we want
+  unless($self->{encoding}) {
+    $self->{encoding} = $self->{wiki}->store->{_charset};
   }
 
   $self->{timestamp_fmt} = $Wiki::Toolkit::Store::Database::timestamp_fmt;
@@ -89,7 +94,7 @@ sub build_feed_start {
                  ? '<subtitle>' . $self->{site_description} . "</subtitle>\n"
                  : '';
                  
-  my $atom = qq{<?xml version="1.0" encoding="UTF-8"?>
+  my $atom = qq{<?xml version="1.0" encoding="} . $self->{encoding} . qq{"?>
 
 <feed 
  xmlns         = "http://www.w3.org/2005/Atom"
@@ -273,6 +278,18 @@ sub feed_timestamp
   return $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
 }
 
+
+=item B<parse_feed_timestamp>
+
+Take a feed_timestamp and return a Time::Piece object. 
+
+=cut
+sub parse_feed_timestamp {
+    my ($self, $feed_timestamp) = @_;
+   
+    $feed_timestamp = substr($feed_timestamp, 0, -length( $self->{utc_offset}));
+    return Time::Piece->strptime( $feed_timestamp, '%Y-%m-%dT%H:%M:%S' );
+}
 1;
 
 __END__
@@ -336,6 +353,7 @@ This module is a straight port of L<Wiki::Toolkit::Feed::RSS>.
     software_name        => $your_software_name,     # e.g. "Wiki::Toolkit"
     software_version     => $your_software_version,  # e.g. "0.73"
     software_homepage    => $your_software_homepage, # e.g. "http://search.cpan.org/dist/CGI-Wiki/"
+    encoding             => 'UTF-8'
   );
 
 C<wiki> must be a L<Wiki::Toolkit> object. C<make_node_url>, if supplied, must 
@@ -372,6 +390,17 @@ The three optional arguments
 =back
 
 are used to generate the C<generator> part of the feed.
+
+The optional argument
+
+=over 4
+
+=item * encoding
+
+=back
+
+will be used to specify the character encoding in the feed. If not set,
+will default to the wiki store's encoding.
 
 =head2 C<recent_changes()>
 

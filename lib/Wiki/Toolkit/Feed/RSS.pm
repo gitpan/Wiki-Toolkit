@@ -41,10 +41,15 @@ sub new
     $self->handle_supply_one_of(\%mustoneof,\%args);
   
     # Optional arguments.
-    foreach my $arg (qw/site_description interwiki_identifier make_diff_url make_history_url 
+    foreach my $arg (qw/site_description interwiki_identifier make_diff_url make_history_url encoding
                         software_name software_version software_homepage/)
     {
         $self->{$arg} = $args{$arg} || '';
+    }
+
+    # Supply some defaults, if a blank string isn't what we want
+    unless($self->{encoding}) {
+        $self->{encoding} = $self->{wiki}->store->{_charset};
     }
 
     $self->{timestamp_fmt} = $Wiki::Toolkit::Store::Database::timestamp_fmt;
@@ -64,7 +69,7 @@ sub build_feed_start {
   my ($self,$feed_timestamp) = @_;
 
   #"http://purl.org/rss/1.0/modules/wiki/"
-  return qq{<?xml version="1.0" encoding="UTF-8"?>
+  return qq{<?xml version="1.0" encoding="}. $self->{encoding} .qq{"?>
 
 <rdf:RDF
  xmlns         = "http://purl.org/rss/1.0/"
@@ -345,8 +350,7 @@ Generate the timestamp for the RSS, based on the newest node (if available).
 Will return a timestamp for now if no node dates are available
 
 =cut
-sub feed_timestamp
-{
+sub feed_timestamp {
     my ($self, $newest_node) = @_;
 
     my $time;
@@ -371,6 +375,18 @@ sub rss_timestamp {
                               $self->fetch_newest_for_recently_changed(%args)
     );
     return $feed_timestamp;
+}
+
+=item B<parse_feed_timestamp>
+
+Take a feed_timestamp and return a Time::Piece object. 
+
+=cut
+sub parse_feed_timestamp {
+    my ($self, $feed_timestamp) = @_;
+   
+    $feed_timestamp = substr($feed_timestamp, 0, -length( $self->{utc_offset}));
+    return Time::Piece->strptime( $feed_timestamp, '%Y-%m-%dT%H:%M:%S' );
 }
 
 1;
@@ -405,7 +421,8 @@ L<http://www.usemod.com/cgi-bin/mb.pl?ModWiki>
                              my ($node_name, $version) = @_;
                              return 'http://example.com/?id=' . uri_escape($node_name) . ';version=' . uri_escape($version);
                            },
-    html_equiv_link => 'http://example.com/?RecentChanges',
+    html_equiv_link     => 'http://example.com/?RecentChanges',
+    encoding            => 'UTF-8'
   );
 
   print "Content-type: application/xml\n\n";
@@ -478,6 +495,17 @@ The three optional arguments
 
 are used to generate DOAP (Description Of A Project - see L<http://usefulinc.com/doap>) metadata
 for the feed to show what generated it.
+
+The optional argument
+
+=over 4
+
+=item * encoding
+
+=back
+
+will be used to specify the character encoding in the feed. If not set,
+will default to the wiki store's encoding.
 
 =head2 C<recent_changes()>
 

@@ -3,7 +3,7 @@ package Wiki::Toolkit;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.72';
+$VERSION = '0.73';
 
 use Carp qw(croak carp);
 use Digest::MD5 "md5_hex";
@@ -258,7 +258,7 @@ until they're tagged as moderated, when they will become the new node.
 
 sub set_node_moderation {
     my ($self, @args) = @_;
-    $self->store->set_node_moderation( @args );
+    return $self->store->set_node_moderation( @args );
 }
 
 =item B<rename_node>
@@ -786,6 +786,7 @@ sub register_plugin {
     my $plugin = $args{plugin} || "";
     croak "no plugin supplied" unless $plugin;
     if ( $plugin->isa( "Wiki::Toolkit::Plugin" ) ) {
+        $plugin->wiki(      $self             );
         $plugin->datastore( $self->store      );
         $plugin->indexer(   $self->search_obj );
         $plugin->formatter( $self->formatter  );
