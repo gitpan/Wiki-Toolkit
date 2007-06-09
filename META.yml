@@ -1,7 +1,7 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Wiki-Toolkit
-version:      0.73
+version:      0.74
 version_from: lib/Wiki/Toolkit.pm
 installdirs:  site
 requires:
@@ -10,7 +10,7 @@ requires:
     HTML::PullParser:              0
     Plucene:                       1.19
     Test::More:                    0
-    Text::WikiFormat:              0.45
+    Text::WikiFormat:              0.78
     Time::Piece:                   0
 
 distribution_type: module

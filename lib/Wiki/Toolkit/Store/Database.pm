@@ -11,7 +11,7 @@ use Time::Seconds;
 use Carp qw( carp croak );
 use Digest::MD5 qw( md5_hex );
 
-$VERSION = '0.27';
+$VERSION = '0.28';
 my $SCHEMA_VER = 9;
 
 # first, detect if Encode is available - it's not under 5.6. If we _are_
@@ -44,10 +44,11 @@ This is probably only useful for Wiki::Toolkit developers.
 =item B<new>
 
   my $store = Wiki::Toolkit::Store::MySQL->new( dbname  => "wiki",
-					    dbuser  => "wiki",
-					    dbpass  => "wiki",
-                                            dbhost  => "db.example.com",
-                                            charset => "iso-8859-1" );
+                        dbuser  => "wiki",
+                        dbpass  => "wiki",
+                        dbhost  => "db.example.com",
+                        dbport  => 1234,
+                        charset => "iso-8859-1" );
 or
 
   my $store = Wiki::Toolkit::Store::MySQL->new( dbh => $dbh );
@@ -56,9 +57,9 @@ C<charset> is optional, defaults to C<iso-8859-1>, and does nothing
 unless you're using perl 5.8 or newer.
 
 If you do not provide an active database handle in C<dbh>, then
-C<dbname> is mandatory. C<dbpass>, C<dbuser> and C<dbhost> are
-optional, but you'll want to supply them unless your database's
-authentication method doesn't require it.
+C<dbname> is mandatory. C<dbpass>, C<dbuser>, C<dbhost> and C<dbport>
+are optional, but you'll want to supply them unless your database's
+connection method doesn't require them.
 
 If you do provide C<database> then it must have the following
 parameters set; otherwise you should just provide the connection
@@ -101,12 +102,13 @@ sub _init {
         $self->{_dbuser} = $args{dbuser} || "";
         $self->{_dbpass} = $args{dbpass} || "";
         $self->{_dbhost} = $args{dbhost} || "";
+        $self->{_dbport} = $args{dbport} || "";
         $self->{_charset} = $args{charset} || "iso-8859-1";
 
         # Connect to database and store the database handle.
-        my ($dbname, $dbuser, $dbpass, $dbhost) =
-                               @$self{qw(_dbname _dbuser _dbpass _dbhost)};
-        my $dsn = $self->_dsn($dbname, $dbhost)
+        my ($dbname, $dbuser, $dbpass, $dbhost, $dbport) =
+                               @$self{qw(_dbname _dbuser _dbpass _dbhost _dbport)};
+        my $dsn = $self->_dsn($dbname, $dbhost, $dbport)
             or croak "No data source string provided by class";
         $self->{_dbh} = DBI->connect( $dsn, $dbuser, $dbpass,
 				      { PrintError => 0, RaiseError => 1,
@@ -1820,6 +1822,48 @@ sub list_unmoderated_nodes {
 	while(my @results = $sth->fetchrow_array) {
 		my %data;
 		@data{ qw( node_id name moderated_version version ) } = @results;
+		push @nodes, \%data;
+	}
+
+	return @nodes;
+}
+
+=item B<list_last_version_before>
+	List the last version of every node before a given date.
+	If no version existed before that date, will return undef for version.
+	Returns a hash of id, name, version and date
+
+	my @nv = $wiki->list_last_version_before('2007-01-02 10:34:11')
+	foreach my $data (@nv) {
+		
+	}
+=cut
+sub list_last_version_before {
+	my ($self, $date) = @_;
+
+	my $sql =
+		 "SELECT "
+		."	id, name, "
+		."MAX(content.version) AS version, MAX(content.modified) AS modified "
+		."FROM node "
+		."LEFT OUTER JOIN content "
+		."	ON (id = node_id "
+		."      AND content.modified <= ?) "
+		."GROUP BY id, name "
+		."ORDER BY id "
+	;
+
+	# Query
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare( $sql );
+    $sth->execute( $date );
+
+	my @nodes;
+	while(my @results = $sth->fetchrow_array) {
+		my %data;
+		@data{ qw( id name version modified ) } = @results;
+		$data{'node_id'} = $data{'id'};
+		unless($data{'version'}) { $data{'version'} = undef; }
 		push @nodes, \%data;
 	}
 

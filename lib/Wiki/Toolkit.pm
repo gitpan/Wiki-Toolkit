@@ -3,7 +3,7 @@ package Wiki::Toolkit;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.73';
+$VERSION = '0.74';
 
 use Carp qw(croak carp);
 use Digest::MD5 "md5_hex";
@@ -569,6 +569,22 @@ sub list_node_all_versions {
     }
 
     return $self->store->list_node_all_versions(%args);
+}
+
+=item B<list_last_version_before>
+	List the last version of every node before a given date.
+	If no version existed before that date, will return undef for version.
+	Returns a hash of id, name, version and date
+
+	my @nv = $wiki->list_last_version_before('2007-01-02 10:34:11')
+	foreach my $data (@nv) {
+		
+	}
+=cut
+sub list_last_version_before {
+    my ($self,@argsarray) = @_;
+
+    return $self->store->list_last_version_before(@argsarray);
 }
 
 =item B<node_exists>
