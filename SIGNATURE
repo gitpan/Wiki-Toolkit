@@ -14,51 +14,53 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 a5e13dfe8f8d7375dc7e0438ccc07ac3c3ad7a71 Changes
+SHA1 b673703cac708e96676c938ebe0f627f869a0832 Changes
 SHA1 eef58741b82a1f029e62cc854755dfc2f4ada7b5 INSTALL
-SHA1 aa6ac67c2d4d6254bc44b15571ed99ddd01f4730 MANIFEST
-SHA1 8278b4b58d9307fd1456b8d505c9d5c36e3e72a2 META.yml
-SHA1 912922b957f84561b4964feeb1dff8f8fcf80a7b Makefile.PL
+SHA1 762befe822b42c5d3e54fcb49b63f1243bbd7685 MANIFEST
+SHA1 35f2e5e92c7a877ae02f4cdc2343476026d00073 META.yml
+SHA1 75a73087b2b0a7a9b085e656d9b9a121cd8752a3 Makefile.PL
 SHA1 0c94c05497c37c21a91b89eb94ba2ae2b6c9199d README
 SHA1 b609af99f3e2315da9a65c50f0b6744d61bcd0bc bin/user-setup-mysql-dbixfts.pl
-SHA1 9a9d215b2d5887077642f7e726293ec1a61679de bin/wiki-toolkit-rename-node
-SHA1 e85e2de45e102ab775467231918bdadd773ed2f0 bin/wiki-toolkit-setupdb
-SHA1 83789314bdce9897e6cb9378ba57a91ce03c1339 lib/Wiki/Toolkit.pm
+SHA1 d2e74c333f01855e25ecd6eaeeabbcb19e4f7d71 bin/wiki-toolkit-delete-node
+SHA1 b0e09c8a7380cf28e0745f5067d199bf600297d8 bin/wiki-toolkit-rename-node
+SHA1 8c77175cffbc7941daa59e3d932d8dbca494a8e3 bin/wiki-toolkit-revert-to-date
+SHA1 53224377b164bfd46034f6e3749c96d9c7fe97ad bin/wiki-toolkit-setupdb
+SHA1 bb641a14e278903de3cec31422c1c55032246de3 lib/Wiki/Toolkit.pm
 SHA1 d94d5a76e824fa260e726fbcd256d7b8709d8f00 lib/Wiki/Toolkit/Extending.pod
-SHA1 70d54869a516d1535cad59c4a6b1a625270c0958 lib/Wiki/Toolkit/Feed/Atom.pm
-SHA1 7a88fae43d0a432fb082e06992345fb29d8a5800 lib/Wiki/Toolkit/Feed/Listing.pm
-SHA1 03828cd22adc55a48b27b2a13c7add63abee31d1 lib/Wiki/Toolkit/Feed/RSS.pm
-SHA1 86746c7ddc67b241204835c4f9057196b54af862 lib/Wiki/Toolkit/Formatter/Default.pm
-SHA1 47fd5a918ee755489ad4dbecd206ab9d61ec8092 lib/Wiki/Toolkit/Formatter/Multiple.pm
-SHA1 b5016b9fe25bfefdaa224613c1ed8fb6a03ae305 lib/Wiki/Toolkit/Formatter/WikiLinkFormatterParent.pm
+SHA1 3ddb85f3ced24edd9f7c284c65a932ee2d9f7120 lib/Wiki/Toolkit/Feed/Atom.pm
+SHA1 9b2daeb27c9780469fc417608e36f7268e82effa lib/Wiki/Toolkit/Feed/Listing.pm
+SHA1 a1e9bbbca921d4156b3a00e6080302295721ba15 lib/Wiki/Toolkit/Feed/RSS.pm
+SHA1 58be3b135711f9abfea1c3715713730e1c8cddc8 lib/Wiki/Toolkit/Formatter/Default.pm
+SHA1 841470aa33e8287e436c6f4680b23a395bad2d43 lib/Wiki/Toolkit/Formatter/Multiple.pm
+SHA1 f3db365b4947f941b87f3c0076bf4f50670bd449 lib/Wiki/Toolkit/Formatter/WikiLinkFormatterParent.pm
 SHA1 977a1604f01d3ea74e95b90b3235fd6b25a3eae6 lib/Wiki/Toolkit/Plugin.pm
-SHA1 ddac72bc8222e400372e595a44efc64c4209260d lib/Wiki/Toolkit/Search/Base.pm
+SHA1 dbe0ed8cb5f23e2ec148279d0874a5798ffe76d4 lib/Wiki/Toolkit/Search/Base.pm
 SHA1 d66d0d743a74b2b5a86c251d6fd5a3d4c9777a3b lib/Wiki/Toolkit/Search/DBIxFTS.pm
-SHA1 88dc2f123e5f9252b1af9f40fc1f663055973cec lib/Wiki/Toolkit/Search/Plucene.pm
-SHA1 38aae70d1c67f906e2587fa4e30f9a5eb0069b94 lib/Wiki/Toolkit/Search/SII.pm
-SHA1 9fbbca0cdf2c48ba7a24bbc30baf510bc8952bee lib/Wiki/Toolkit/Setup/DBIxFTSMySQL.pm
-SHA1 74524df4e5d8e474c248fbceb4b6d4d82eda90a3 lib/Wiki/Toolkit/Setup/Database.pm
-SHA1 8b382fb3cdffd3a5100b248c610b74dfbb83a6c6 lib/Wiki/Toolkit/Setup/MySQL.pm
-SHA1 720f50899bc3a09795f8f0363055d8880c2b7be6 lib/Wiki/Toolkit/Setup/Pg.pm
-SHA1 8e4dec6b4c2c4b1dbfd60f457782995aaf21514f lib/Wiki/Toolkit/Setup/SII.pm
-SHA1 9dbe470e998cec910cba072f56888cd8f616190d lib/Wiki/Toolkit/Setup/SQLite.pm
-SHA1 3da3c3e94813db9a1550c82feb21ffad18eb2a9b lib/Wiki/Toolkit/Store/Database.pm
-SHA1 4b160025c18bd2ddd6bf171bb31785cbe54148c0 lib/Wiki/Toolkit/Store/MySQL.pm
-SHA1 54484ca25bc1819ca967a2bc484c679182581b35 lib/Wiki/Toolkit/Store/Pg.pm
-SHA1 9a19e4f80a2151f5e698d7d75a81c6d813dc89bf lib/Wiki/Toolkit/Store/SQLite.pm
-SHA1 9fd32c499541ed08cafebaf1a18a364e4aa62d6c lib/Wiki/Toolkit/TestConfig/Utilities.pm
-SHA1 20ead3940afd0d776fa04e1c80476b374e1d8e39 lib/Wiki/Toolkit/TestLib.pm
+SHA1 33e8270f8ee16188f885e968bf264500c6a792e9 lib/Wiki/Toolkit/Search/Plucene.pm
+SHA1 9e4b253033b5e5546d1fc2ad208893beffe4b11f lib/Wiki/Toolkit/Search/SII.pm
+SHA1 1ca6436c912d89042e7c4fb6e91c2f5e782e1384 lib/Wiki/Toolkit/Setup/DBIxFTSMySQL.pm
+SHA1 1935810210072f71b5e189fbcb7c847289a5c182 lib/Wiki/Toolkit/Setup/Database.pm
+SHA1 f87cb8e9a5d285aca781739b6e1c6b630d86cd30 lib/Wiki/Toolkit/Setup/MySQL.pm
+SHA1 65d2c37a92c1a093250595fe8edac9e8e554778f lib/Wiki/Toolkit/Setup/Pg.pm
+SHA1 bab05bcb78464ddd3fc5f3a115c379bc77891e78 lib/Wiki/Toolkit/Setup/SII.pm
+SHA1 40b0a9439ff54c07cd5440123ffd62825e5c13f7 lib/Wiki/Toolkit/Setup/SQLite.pm
+SHA1 a39f7db734ac89ee4414d05b6cdf3e20e0177a18 lib/Wiki/Toolkit/Store/Database.pm
+SHA1 357dde1bde1752e5d6109e642457f9b7113f4f5a lib/Wiki/Toolkit/Store/MySQL.pm
+SHA1 b90c7daa208e286bde629f4d3827d8aea1237042 lib/Wiki/Toolkit/Store/Pg.pm
+SHA1 45d26d37776fe226eb9e31aaad7fbf87193cc64b lib/Wiki/Toolkit/Store/SQLite.pm
+SHA1 ffb913278dfdf3dcd218df1b8eef34a3b49bec8a lib/Wiki/Toolkit/TestConfig/Utilities.pm
+SHA1 e104b10c5deb5f1c90002f1b934dcd7136807060 lib/Wiki/Toolkit/TestLib.pm
 SHA1 dc2fad10c28dd5ab62f907482597a0ea61564f0a t/001_load.t
 SHA1 2a3dcdf422275c94003924b96528fd6cd36d9c32 t/002_datastore_setup.t
 SHA1 3be1c6ad6cf71a10e19bd20b93452cbba987dc02 t/003_instantiate.t
-SHA1 ae9c6e8f966f129e409cdc67fbc54ba690606c13 t/004_write_and_retrieve.t
+SHA1 4aca7bc185dd9807958a02e77df3c3e562b953d3 t/004_write_and_retrieve.t
 SHA1 0b0ddffa885e2bdfa0dbdb34bbab0ccd724fd200 t/005_delete.t
 SHA1 762cb2b5dd64d47a7ad35506dbc0f2e82dd4bad7 t/006_list_all.t
 SHA1 4acf41e8b5ed883eb888d52225e479b9b145bede t/007_search.t
 SHA1 d58fbfdfaead5ff0b21eb9707d526559a5a46974 t/008_write_and_rewrite.t
 SHA1 cc04461a34b0da8cffe318f6cbd4da1a75d77ecc t/009_backlinks.t
 SHA1 db911060b3a3bb76800586b2af1ce1bb59e1f820 t/010_metadata.t
-SHA1 d1abba223a507e4bbf164f9e9eff21fba154fca5 t/011_recent_changes.t
+SHA1 9628fb2949c8fa44872dbfcd46395253e487ec07 t/011_recent_changes.t
 SHA1 9eaf665441379797837578ecc79e695b38047a49 t/012_blank_data.t
 SHA1 acc6c003e6cdfd847b80bbb47923ceebde79240d t/013_fuzzy_title_match.t
 SHA1 38a1f4e33bf54e5a27566fe334fcfd517b5aba1a t/014_advanced_metadata.t
@@ -69,13 +71,15 @@ SHA1 056d69169f5d755695fbbd140db63ae1d043150b t/018_rc_multiple_metadata_criteri
 SHA1 a66ec66d0d6160a08ea8d07f516ebbe3e77f8bdc t/019_recent_changes_case.t
 SHA1 e78dffe59869cb7d3034a685d0505b0ff14e849b t/020_node_exists_case_insensitive.t
 SHA1 f8969cd3302a846c572e974fd2757d619ead8ff6 t/021_moderation.t
-SHA1 c78358b5f725aea58c7f2b89be5eeaf98f3ca7fb t/022_list_unmoderated.t
+SHA1 a0a08d58894b033b3a05fc1401fdb60251e4931f t/022_list_unmoderated.t
 SHA1 26ed2cc986e5a250e9e4d844a9806076d1aeedac t/025_list_node_all_versions.t
 SHA1 e509921acbbc81ef9854a10d844e218fa733742d t/026_schema_current.t
+SHA1 50d38bca1b5181b797b3236247d4e571ae9d760a t/027_list_last_version_before.t
 SHA1 b4b005e1eb79b265f027ec769449e5d1272f3a26 t/040_rename.t
 SHA1 7535dd0d99fe1061e83ecf0b6073bac3543741bf t/050_mysql_store.t
 SHA1 ece618af3160f836af18d9045dc90c2875f6210c t/051_pg_store.t
 SHA1 1278d153467716c9fb3249c4a0cf9978dd9b92f4 t/052_sqlite_store.t
+SHA1 bd2b42bf5dbc133b315d3490773506b76e1cf2a4 t/060_recent_changes_new_only.t
 SHA1 6adec606eae81ca262ff2b04c70f03b55566bbc6 t/100_formatting.t
 SHA1 e3a21e8441b1b6b92942cc3346f091da410116f7 t/101_default_formatter.t
 SHA1 77269781bbea9c82a2def6977fb4389d3f599d50 t/102_multiple_formatter.t
@@ -97,7 +101,7 @@ SHA1 5ba3e2fa69ad7ca30aa726289275e1e2f7220fc6 t/lib/Wiki/Toolkit/Plugin/Foo.pm
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFGauR3YzuFKFF44qURAuhLAJwOPsL951HlGdeg1BznPUio8E9rVgCg/WGX
-q+Zqu9Cpkj2FpTtp9utTagE=
-=p/9+
+iD8DBQFIJy0RYzuFKFF44qURAtHvAKCHVYmmmV/0fHZqeRqaHZvVg/G6DQCfV7Gq
+58Tl8/UR4sZINHxAMWi4qDE=
+=OJEJ
 -----END PGP SIGNATURE-----

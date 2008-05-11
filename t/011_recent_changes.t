@@ -5,7 +5,7 @@ use Test::More;
 if ( scalar @Wiki::Toolkit::TestLib::wiki_info == 0 ) {
     plan skip_all => "no backends configured";
 } else {
-    plan tests => ( 26 * scalar @Wiki::Toolkit::TestLib::wiki_info );
+    plan tests => ( 25 * scalar @Wiki::Toolkit::TestLib::wiki_info );
 }
 
 my $iterator = Wiki::Toolkit::TestLib->new_wiki_maker;
@@ -18,7 +18,7 @@ while ( my $wiki = $iterator->new_wiki ) {
     #####
     #####   Node1 (Kake, minor tidying)
     #####   Everyone's Favourite Hobby (nou)
-    #####   Another Node
+    #####   Another Node (nou)
 
     my $start_time = time;
     do_sleep();
@@ -155,6 +155,7 @@ while ( my $wiki = $iterator->new_wiki ) {
     is( scalar @nodes, 1,
        "metadata_was returns nodes whose current version doesn't match" );
     is( $nodes[0]{name}, "Another Node", "...correctly" );
+    is( $nodes[0]{version}, 1, "...and the correct version" );
 
     ##### Testing metadata_wasnt - Everyone's Favourite Hobby and
     ##### Another Node were both written as *not* minor edits, but
@@ -169,35 +170,6 @@ while ( my $wiki = $iterator->new_wiki ) {
     );
     is( scalar @nodes, 2,
         "metadata_wasnt returns nodes whose current version matches" );
-
-  SKIP: {
-    skip "TODO", 2;
-
-    # Test by "last n nodes added".
-    foreach my $node ("Temp Node 1", "Temp Node 2", "Temp Node 3") {
-        $wiki->write_node($node, "foo");
-        my $slept = sleep(2);
-        warn "Slept for less than a second, 'last n added' test may fail"
-          unless $slept >= 1;
-    }
-    @nodes = $wiki->list_recent_changes( last_n_added => 2 );
-    @nodenames = map { $_->{name} } @nodes;
-    is_deeply( \@nodenames, ["Temp Node 3", "Temp Node 2"],
-               "last_n_added works" );
-    my $slept = sleep(2);
-        warn "Slept for less than a second, 'last n added' test may fail"
-          unless $slept >= 1;
-    my %node_data = $wiki->retrieve_node("Temp Node 1");
-    $wiki->write_node("Temp Node1", @node_data{qw( content checksum )});
-    @nodes = $wiki->list_recent_changes( last_n_added => 2 );
-    @nodenames = map { $_->{name} } @nodes;
-    is_deeply( \@nodenames, ["Temp Node 3", "Temp Node 2"],
-               "...still works when we've written to an older node" );
-
-    foreach my $node ("Temp Node 1", "Temp Node 2", "Temp Node 3") {
-        $wiki->delete_node($node) or die "Couldn't clean up";
-    }
-  }
 }
 
 sub do_sleep {

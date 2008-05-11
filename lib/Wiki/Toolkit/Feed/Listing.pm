@@ -102,8 +102,7 @@ array of the feed, and the feed timestamp. Otherwise it just returns the feed.
 
 =cut
 
-sub recent_changes
-{
+sub recent_changes {
     my ($self, %args) = @_;
 
     my @changes = $self->fetch_recently_changed_nodes(%args);
@@ -113,7 +112,7 @@ sub recent_changes
 
     my $feed = $self->generate_node_list_feed($feed_timestamp, @changes);
 
-    if($args{'also_return_timestamp'}) {
+    if ($args{'also_return_timestamp'}) {
         return ($feed,$feed_timestamp);
     } else {
         return $feed;
@@ -130,8 +129,7 @@ array of the feed, and the feed timestamp. Otherwise it just returns the feed.
 
 =cut
 
-sub node_all_versions
-{
+sub node_all_versions {
     my ($self, %args) = @_;
 
     my @all_versions = $self->fetch_node_all_versions(%args);
@@ -192,7 +190,9 @@ sub format_geo {
 #item B<handle_supply_one_of>
 # Utility method, to help with argument passing where one of a list of 
 #  arguments must be supplied
+#
 #=cut
+
 sub handle_supply_one_of {
     my ($self,$mref,$aref) = @_;
     my %mustoneof = %{$mref};
@@ -249,8 +249,8 @@ sub generate_node_name_distance_feed { die("Not implemented by feed renderer!");
 Take a feed_timestamp and return a Time::Piece object. 
 
 =cut
-sub parse_feed_timestamp { die("Not implemented by feed renderer!"); }
 
+sub parse_feed_timestamp { die("Not implemented by feed renderer!"); }
 
 1;
 
@@ -277,6 +277,5 @@ Copyright 2006 the Wiki::Toolkit team.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
-
 
 =cut

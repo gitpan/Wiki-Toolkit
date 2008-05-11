@@ -3,7 +3,7 @@ package Wiki::Toolkit::Feed::RSS;
 use strict;
 
 use vars qw( @ISA $VERSION );
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 use POSIX 'strftime';
 use Time::Piece;
@@ -13,8 +13,7 @@ use Carp qw( croak );
 use Wiki::Toolkit::Feed::Listing;
 @ISA = qw( Wiki::Toolkit::Feed::Listing );
 
-sub new
-{
+sub new {
     my $class = shift;
     my $self  = {};
     bless $self, $class;
@@ -22,16 +21,14 @@ sub new
     my %args = @_;
     my $wiki = $args{wiki};
 
-    unless ($wiki && UNIVERSAL::isa($wiki, 'Wiki::Toolkit'))
-    {
+    unless ($wiki && UNIVERSAL::isa($wiki, 'Wiki::Toolkit')) {
         croak 'No Wiki::Toolkit object supplied';
     }
   
     $self->{wiki} = $wiki;
   
     # Mandatory arguments.
-    foreach my $arg (qw/site_name site_url make_node_url/)
-    {
+    foreach my $arg (qw/site_name site_url make_node_url/) {
         croak "No $arg supplied" unless $args{$arg};
         $self->{$arg} = $args{$arg};
     }
@@ -41,9 +38,7 @@ sub new
     $self->handle_supply_one_of(\%mustoneof,\%args);
   
     # Optional arguments.
-    foreach my $arg (qw/site_description interwiki_identifier make_diff_url make_history_url encoding
-                        software_name software_version software_homepage/)
-    {
+    foreach my $arg (qw/site_description interwiki_identifier make_diff_url make_history_url encoding software_name software_version software_homepage/) {
         $self->{$arg} = $args{$arg} || '';
     }
 
@@ -65,11 +60,12 @@ Internal method, to build all the stuff that will go at the start of a feed.
 Generally will output namespaces, headers and so on.
 
 =cut
-sub build_feed_start {
-  my ($self,$feed_timestamp) = @_;
 
-  #"http://purl.org/rss/1.0/modules/wiki/"
-  return qq{<?xml version="1.0" encoding="}. $self->{encoding} .qq{"?>
+sub build_feed_start {
+    my ($self,$feed_timestamp) = @_;
+
+    #"http://purl.org/rss/1.0/modules/wiki/"
+    return qq{<?xml version="1.0" encoding="}. $self->{encoding} .qq{"?>
 
 <rdf:RDF
  xmlns         = "http://purl.org/rss/1.0/"
@@ -90,39 +86,38 @@ sub build_feed_start {
 Internal method, to build all the stuff (except items) to go inside the channel
 
 =cut
+
 sub build_feed_mid {
     my ($self,$feed_timestamp) = @_;
 
     my $rss .= qq{<dc:publisher>} . $self->{site_url} . qq{</dc:publisher>\n};
 
-if ($self->{software_name})
-{
-  $rss .= qq{<foaf:maker>
-  <doap:Project>
-    <doap:name>} . $self->{software_name} . qq{</doap:name>\n};
-}
+    if ($self->{software_name}) {
+        $rss .= qq{<foaf:maker>
+        <doap:Project>
+        <doap:name>} . $self->{software_name} . qq{</doap:name>\n};
+    }
 
-if ($self->{software_name} && $self->{software_homepage})
-{
-  $rss .= qq{    <doap:homepage rdf:resource="} . $self->{software_homepage} . qq{" />\n};
-}
+    if ($self->{software_name} && $self->{software_homepage}) {
+        $rss .= qq{    <doap:homepage rdf:resource="} . $self->{software_homepage} . qq{" />\n};
+    }
 
-if ($self->{software_name} && $self->{software_version})
-{
-  $rss .= qq{    <doap:release>
+    if ($self->{software_name} && $self->{software_version}) {
+        $rss .= qq{    <doap:release>
       <doap:Version>
-        <doap:revision>} . $self->{software_version} . qq{</doap:revision>
+      <doap:revision>} . $self->{software_version} . qq{</doap:revision>
       </doap:Version>
     </doap:release>\n};
-}
+    }
 
-if ($self->{software_name})
-{
-  $rss .= qq{  </doap:Project>
+    if ($self->{software_name}) {
+        $rss .= qq{  </doap:Project>
 </foaf:maker>\n};
-}
+    }
 
-$rss .= qq{<title>}   . $self->{site_name}             . qq{</title>
+    $feed_timestamp ||= '';
+
+    $rss .= qq{<title>}   . $self->{site_name}             . qq{</title>
 <link>}               . $self->{html_equiv_link}       . qq{</link>
 <description>}        . $self->{site_description}      . qq{</description>
 <dc:date>}            . $feed_timestamp                . qq{</dc:date>
@@ -136,6 +131,7 @@ $rss .= qq{<title>}   . $self->{site_name}             . qq{</title>
 Internal method, to build all the stuff that will go at the end of a feed
 
 =cut
+
 sub build_feed_end {
     my ($self,$feed_timestamp) = @_;
 
@@ -148,90 +144,88 @@ sub build_feed_end {
 Generate and return an RSS feed for a list of nodes
 
 =cut
-sub generate_node_list_feed {
-  my ($self,$feed_timestamp,@nodes) = @_;
 
-  # Start our feed
-  my $rss = $self->build_feed_start($feed_timestamp);
-  $rss .= qq{
+sub generate_node_list_feed {
+    my ($self,$feed_timestamp,@nodes) = @_;
+
+    # Start our feed
+    my $rss = $self->build_feed_start($feed_timestamp);
+    $rss .= qq{
 
 <channel rdf:about="">
 
 };
-  $rss .= $self->build_feed_mid($feed_timestamp);
+    $rss .= $self->build_feed_mid($feed_timestamp);
 
-  # Generate the items list, and the individiual item entries
-  my (@urls, @items);
-  foreach my $node (@nodes)
-  {
-    my $node_name = $node->{name};
+    # Generate the items list, and the individiual item entries
+    my (@urls, @items);
+    foreach my $node (@nodes) {
+        my $node_name = $node->{name};
 
-    my $timestamp = $node->{last_modified};
+        my $timestamp = $node->{last_modified};
     
-    # Make a Time::Piece object.
-    my $time = Time::Piece->strptime($timestamp, $self->{timestamp_fmt});
+        # Make a Time::Piece object.
+        my $time = Time::Piece->strptime($timestamp, $self->{timestamp_fmt});
 
-    my $utc_offset = $self->{utc_offset};
+        my $utc_offset = $self->{utc_offset};
     
-    $timestamp = $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
+        $timestamp = $time->strftime( "%Y-%m-%dT%H:%M:%S$utc_offset" );
 
-    my $author      = $node->{metadata}{username}[0] || $node->{metadata}{host}[0] || '';
-    my $description = $node->{metadata}{comment}[0]  || '';
+        my $author      = $node->{metadata}{username}[0] || $node->{metadata}{host}[0] || '';
+        my $description = $node->{metadata}{comment}[0]  || '';
 
-    $description .= " [$author]" if $author;
+        $description .= " [$author]" if $author;
 
-    my $version = $node->{version};
-    my $status  = (1 == $version) ? 'new' : 'updated';
+        my $version = $node->{version};
+        my $status  = (1 == $version) ? 'new' : 'updated';
 
-    my $major_change = $node->{metadata}{major_change}[0];
-       $major_change = 1 unless defined $major_change;
-    my $importance = $major_change ? 'major' : 'minor';
+        my $major_change = $node->{metadata}{major_change}[0];
+        $major_change = 1 unless defined $major_change;
+        my $importance = $major_change ? 'major' : 'minor';
 
-    my $url = $self->{make_node_url}->($node_name, $version);
+        my $url = $self->{make_node_url}->($node_name, $version);
 
-    push @urls, qq{    <rdf:li rdf:resource="$url" />\n};
+        push @urls, qq{    <rdf:li rdf:resource="$url" />\n};
 
-    my $diff_url = '';
+        my $diff_url = '';
     
-    if ($self->{make_diff_url})
-    {
-	    $diff_url = $self->{make_diff_url}->($node_name);
-    }
-
-    my $history_url = '';
-    
-    if ($self->{make_history_url})
-    {
-      $history_url = $self->{make_history_url}->($node_name);
-    }
-
-    my $node_url = $self->{make_node_url}->($node_name);
-
-    my $rdf_url =  $node_url;
-       $rdf_url =~ s/\?/\?id=/;
-       $rdf_url .= ';format=rdf';
-
-    # make XML-clean
-    my $title =  $node_name;
-       $title =~ s/&/&amp;/g;
-       $title =~ s/</&lt;/g;
-       $title =~ s/>/&gt;/g;
-
-    # Pop the categories into dublin core subject elements
-    #  (http://dublincore.org/usage/terms/history/#subject-004)
-    # TODO: Decide if we should include the "all categories listing" url
-    #        as the scheme (URI) attribute?
-    my $category_rss = "";
-    if($node->{metadata}->{category}) {
-        foreach my $cat (@{ $node->{metadata}->{category} }) {
-            $category_rss .= "  <dc:subject>$cat</dc:subject>\n";
+        if ($self->{make_diff_url}) {
+            $diff_url = $self->{make_diff_url}->($node_name);
         }
-    }
 
-    # Include geospacial data, if we have it
-    my $geo_rss = $self->format_geo($node->{metadata});
+        my $history_url = '';
+    
+        if ($self->{make_history_url}) {
+            $history_url = $self->{make_history_url}->($node_name);
+        }
 
-    push @items, qq{
+        my $node_url = $self->{make_node_url}->($node_name);
+
+        my $rdf_url =  $node_url;
+        $rdf_url =~ s/\?/\?id=/;
+        $rdf_url .= ';format=rdf';
+
+        # make XML-clean
+        my $title =  $node_name;
+        $title =~ s/&/&amp;/g;
+        $title =~ s/</&lt;/g;
+        $title =~ s/>/&gt;/g;
+
+        # Pop the categories into dublin core subject elements
+        #  (http://dublincore.org/usage/terms/history/#subject-004)
+        # TODO: Decide if we should include the "all categories listing" url
+        #        as the scheme (URI) attribute?
+        my $category_rss = "";
+        if($node->{metadata}->{category}) {
+            foreach my $cat (@{ $node->{metadata}->{category} }) {
+                $category_rss .= "  <dc:subject>$cat</dc:subject>\n";
+            }
+        }
+
+        # Include geospacial data, if we have it
+        my $geo_rss = $self->format_geo($node->{metadata});
+
+        push @items, qq{
 <item rdf:about="$url">
   <title>$title</title>
   <link>$url</link>
@@ -248,10 +242,10 @@ $category_rss
 $geo_rss
 </item>
 };
-  }
+    }
   
-  # Output the items list
-  $rss .= qq{
+    # Output the items list
+    $rss .= qq{
 
 <items>
   <rdf:Seq>
@@ -261,13 +255,13 @@ $geo_rss
 </channel>
 };
 
-  # Output the individual item entries
-  $rss .= join('', @items) . "\n";
+    # Output the individual item entries
+    $rss .= join('', @items) . "\n";
 
-  # Finish up
-  $rss .= $self->build_feed_end($feed_timestamp);
+    # Finish up
+    $rss .= $self->build_feed_end($feed_timestamp);
  
-  return $rss;   
+    return $rss;   
 }
 
 
@@ -279,42 +273,42 @@ Generate a very cut down rss feed, based just on the nodes, their locations
 Typically used on search feeds.
 
 =cut
-sub generate_node_name_distance_feed {
-  my ($self,$feed_timestamp,@nodes) = @_;
 
-  # Start our feed
-  my $rss = $self->build_feed_start($feed_timestamp);
-  $rss .= qq{
+sub generate_node_name_distance_feed {
+    my ($self,$feed_timestamp,@nodes) = @_;
+
+    # Start our feed
+    my $rss = $self->build_feed_start($feed_timestamp);
+    $rss .= qq{
 
 <channel rdf:about="">
 
 };
-  $rss .= $self->build_feed_mid($feed_timestamp);
+    $rss .= $self->build_feed_mid($feed_timestamp);
 
-  # Generate the items list, and the individiual item entries
-  my (@urls, @items);
-  foreach my $node (@nodes)
-  {
-    my $node_name = $node->{name};
+    # Generate the items list, and the individiual item entries
+    my (@urls, @items);
+    foreach my $node (@nodes) {
+        my $node_name = $node->{name};
 
-    my $url = $self->{make_node_url}->($node_name);
+        my $url = $self->{make_node_url}->($node_name);
 
-    push @urls, qq{    <rdf:li rdf:resource="$url" />\n};
+        push @urls, qq{    <rdf:li rdf:resource="$url" />\n};
 
-    my $rdf_url =  $url;
-       $rdf_url =~ s/\?/\?id=/;
-       $rdf_url .= ';format=rdf';
+        my $rdf_url =  $url;
+        $rdf_url =~ s/\?/\?id=/;
+        $rdf_url .= ';format=rdf';
 
-    # make XML-clean
-    my $title =  $node_name;
-       $title =~ s/&/&amp;/g;
-       $title =~ s/</&lt;/g;
-       $title =~ s/>/&gt;/g;
+        # make XML-clean
+        my $title =  $node_name;
+        $title =~ s/&/&amp;/g;
+        $title =~ s/</&lt;/g;
+        $title =~ s/>/&gt;/g;
 
-    # What location stuff do we have?
-    my $geo_rss = $self->format_geo($node);
+        # What location stuff do we have?
+        my $geo_rss = $self->format_geo($node);
 
-    push @items, qq{
+        push @items, qq{
 <item rdf:about="$url">
   <title>$title</title>
   <link>$url</link>
@@ -322,10 +316,10 @@ sub generate_node_name_distance_feed {
 $geo_rss
 </item>
 };
-  }
+    }
   
-  # Output the items list
-  $rss .= qq{
+    # Output the items list
+    $rss .= qq{
 
 <items>
   <rdf:Seq>
@@ -335,13 +329,13 @@ $geo_rss
 </channel>
 };
 
-  # Output the individual item entries
-  $rss .= join('', @items) . "\n";
+    # Output the individual item entries
+    $rss .= join('', @items) . "\n";
 
-  # Finish up
-  $rss .= $self->build_feed_end($feed_timestamp);
+    # Finish up
+    $rss .= $self->build_feed_end($feed_timestamp);
  
-  return $rss;   
+    return $rss;   
 }
 
 =item B<feed_timestamp>
@@ -350,12 +344,12 @@ Generate the timestamp for the RSS, based on the newest node (if available).
 Will return a timestamp for now if no node dates are available
 
 =cut
+
 sub feed_timestamp {
     my ($self, $newest_node) = @_;
 
     my $time;
-    if ($newest_node->{last_modified})
-    {
+    if ($newest_node->{last_modified}) {
         $time = Time::Piece->strptime( $newest_node->{last_modified}, $self->{timestamp_fmt} );
     } else {
         $time = localtime;
@@ -382,6 +376,7 @@ sub rss_timestamp {
 Take a feed_timestamp and return a Time::Piece object. 
 
 =cut
+
 sub parse_feed_timestamp {
     my ($self, $feed_timestamp) = @_;
    
@@ -512,11 +507,11 @@ will default to the wiki store's encoding.
   $wiki->write_node(
                      'About This Wiki',
                      'blah blah blah',
-		                 $checksum,
-              		   {
-                       comment  => 'Stub page, please update!',
-		                   username => 'Fred',
-                     }
+                         $checksum,
+                         {
+                           comment  => 'Stub page, please update!',
+                           username => 'Fred',
+                         }
   );
 
   print "Content-type: application/xml\n\n";
@@ -588,7 +583,7 @@ The Wiki::Toolkit project. Originally by Kake Pugh <kake@earth.li>.
 
 Copyright 2003-4 Kake Pugh.
 Copyright 2005 Earle Martin.
-Copyright 2006 the Wiki::Toolkit team
+Copyright 2006-2008 the Wiki::Toolkit team
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

@@ -3,7 +3,7 @@ package Wiki::Toolkit;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.74';
+$VERSION = '0.75';
 
 use Carp qw(croak carp);
 use Digest::MD5 "md5_hex";
@@ -14,10 +14,9 @@ use Digest::MD5 "md5_hex";
 
 my $CAN_USE_ENCODE;
 BEGIN {
-  eval " use Encode ";
-  $CAN_USE_ENCODE = $@ ? 0 : 1;
+    eval " use Encode ";
+    $CAN_USE_ENCODE = $@ ? 0 : 1;
 }
-
 
 =head1 NAME
 
@@ -44,7 +43,7 @@ you.  You will still need to write some code - this isn't an instant Wiki.
       indexdb => $indexdb );
 
   my $wiki      = Wiki::Toolkit->new( store     => $store,
-                                  search    => $search );
+                                      search    => $search );
 
   # Do all the CGI stuff.
   my $q      = CGI->new;
@@ -55,13 +54,13 @@ you.  You will still need to write some code - this isn't an instant Wiki.
       my $raw    = $wiki->retrieve_node($node);
       my $cooked = $wiki->format($raw);
       print_page(node    => $node,
-		 content => $cooked);
+                 content => $cooked);
   } elsif ($action eq 'preview') {
       my $submitted_content = $q->param("content");
       my $preview_html      = $wiki->format($submitted_content);
       print_editform(node    => $node,
-	             content => $submitted_content,
-	             preview => $preview_html);
+                     content => $submitted_content,
+                     preview => $preview_html);
   } elsif ($action eq 'commit') {
       my $submitted_content = $q->param("content");
       my $cksum = $q->param("checksum");
@@ -141,7 +140,7 @@ sub _init {
         carp "You seem to be using a script written for a pre-0.10 version "
            . "of Wiki::Toolkit - the $obsolete_param parameter is no longer used. "
            . "Please read the documentation with 'perldoc Wiki::Toolkit'"
-          if $args{$obsolete_param};
+            if $args{$obsolete_param};
     }
 
     croak "No store supplied" unless $args{store};
@@ -157,9 +156,9 @@ sub _init {
         # following options to alter the default behaviour of Text::WikiFormat.
         my %config;
         foreach ( qw( extended_links implicit_links allowed_tags
-		    macros node_prefix ) ) {
+            macros node_prefix ) ) {
             $config{$_} = $args{$_} if defined $args{$_};
-	}
+    }
         $self->{_formatter} = Wiki::Toolkit::Formatter::Default->new( %config );
     }
 
@@ -218,7 +217,7 @@ even if that type of metadata only has one value.
 sub retrieve_node {
     my ($self, @rawargs) = @_;
 
-	my %args = scalar @rawargs == 1 ? ( name => $rawargs[0] ) : @rawargs;
+    my %args = scalar @rawargs == 1 ? ( name => $rawargs[0] ) : @rawargs;
 
     my @plugins = $self->get_registered_plugins;
     $args{plugins} = \@plugins if scalar @plugins;
@@ -233,6 +232,7 @@ sub retrieve_node {
 Marks the given version of the node as moderated. If this is the
 highest moderated version, then update the node's contents to hold
 this version.
+
 =cut
 
 sub moderate_node {
@@ -241,8 +241,8 @@ sub moderate_node {
     $args{plugins} = \@plugins if scalar @plugins;
 
     my $ret = $self->store->moderate_node( %args );
-	if($ret == -1) { return $ret; }
-	return 1;
+    if($ret == -1) { return $ret; }
+    return 1;
 }
 
 =item B<set_node_moderation>
@@ -254,6 +254,7 @@ Sets if a node requires moderation or not.
 
 When moderation is required, new versions of a node will sit about
 until they're tagged as moderated, when they will become the new node.
+
 =cut
 
 sub set_node_moderation {
@@ -270,28 +271,31 @@ Renames a node, updating any references to it as required.
 Uses the internal_links table to identify the nodes that link to this
 one, and re-writes any wiki links in these to point to the new name. If
 required, it can mark these updates to other pages as a new version.
+
 =cut
 
 sub rename_node {
     my ($self, @argsarray) = @_;
-	my %args = @argsarray;
-	if((scalar @argsarray) == 2 || (scalar @argsarray) == 3) {
-		# Missing keys
-		%args = (
-			old_name => $argsarray[0],
-			new_name => $argsarray[1],
-			create_new_versions => $argsarray[2]
-		);
-	}
+    my %args = @argsarray;
+    if ((scalar @argsarray) == 2 || (scalar @argsarray) == 3) {
+        # Missing keys
+        %args = (
+            old_name => $argsarray[0],
+            new_name => $argsarray[1],
+            create_new_versions => $argsarray[2]
+        );
+    }
 
     my @plugins = $self->get_registered_plugins;
     $args{plugins} = \@plugins if scalar @plugins;
-	$args{wiki} = $self;
+    $args{wiki} = $self;
 
     my $ret = $self->store->rename_node( %args );
 
-	if($ret && $ret == -1) { return $ret; }
-	return 1;
+    if ($ret && $ret == -1) {
+        return $ret;
+    }
+    return 1;
 }
 
 =item B<verify_checksum>
@@ -415,7 +419,9 @@ metadata type is required).
   my @nodes = $store->list_nodes_by_missing_metadata(
       metadata_type  => "latitude"
   );
+
 =cut
+
 sub list_nodes_by_missing_metadata {
     my ($self, @args) = @_;
     $self->store->list_nodes_by_missing_metadata( @args );
@@ -423,94 +429,15 @@ sub list_nodes_by_missing_metadata {
 
 =item B<list_recent_changes>
 
-  # Nodes changed in last 7 days - each node listed only once.
+This is documented in L<Wiki::Toolkit::Store::Database>; see there for
+parameters and return values.  All parameters are passed through
+directly to the store object, so, for example,
+
   my @nodes = $wiki->list_recent_changes( days => 7 );
 
-  # All changes in last 7 days - nodes changed more than once will
-  # be listed more than once.
-  my @nodes = $wiki->list_recent_changes(
-                                          days => 7,
-                                          include_all_changes => 1,
-                                        );
+does exactly the same thing as
 
-  # Nodes changed between 1 and 7 days ago.
-  my @nodes = $wiki->list_recent_changes( between_days => [ 1, 7 ] );
-
-  # Changes since a given time.
-  my @nodes = $wiki->list_recent_changes( since => 1036235131 );
-
-  # Most recent change and its details.
-  my @nodes = $wiki->list_recent_changes( last_n_changes => 1 );
-  print "Node:          $nodes[0]{name}";
-  print "Last modified: $nodes[0]{last_modified}";
-  print "Comment:       $nodes[0]{metadata}{comment}";
-
-  # Last 5 restaurant nodes edited.
-  my @nodes = $wiki->list_recent_changes(
-      last_n_changes => 5,
-      metadata_is    => { category => "Restaurants" }
-  );
-
-  # Last 5 nodes edited by Kake.
-  my @nodes = $wiki->list_recent_changes(
-      last_n_changes => 5,
-      metadata_was   => { username => "Kake" }
-  );
-
-  # All minor edits made by Earle in the last week.
-  my @nodes = $wiki->list_recent_changes(
-      days           => 7,
-      metadata_was   => { username  => "Earle",
-                          edit_type => "Minor tidying." }
-  );
-
-  # Last 10 changes that weren't minor edits.
-  my @nodes = $wiki->list_recent_changes(
-      last_n_changes => 5,
-      metadata_wasnt  => { edit_type => "Minor tidying" }
-  );
-
-You I<must> supply one of the following constraints: C<days>
-(integer), C<since> (epoch), C<last_n_changes> (integer).
-
-You I<may> also supply I<either> C<metadata_is> (and optionally
-C<metadata_isnt>), I<or> C<metadata_was> (and optionally
-C<metadata_wasnt>). Each of these should be a ref to a hash with
-scalar keys and values.  If the hash has more than one entry, then
-only changes satisfying I<all> criteria will be returned when using
-C<metadata_is> or C<metadata_was>, but all changes which fail to
-satisfy any one of the criteria will be returned when using
-C<metadata_isnt> or C<metadata_is>.
-
-C<metadata_is> and C<metadata_isnt> look only at the metadata that the
-node I<currently> has. C<metadata_was> and C<metadata_wasnt> take into
-account the metadata of previous versions of a node.
-
-Returns results as an array, in reverse chronological order.  Each
-element of the array is a reference to a hash with the following entries:
-
-=over 4
-
-=item * B<name>: the name of the node
-
-=item * B<version>: the latest version number
-
-=item * B<last_modified>: the timestamp of when it was last modified
-
-=item * B<metadata>: a ref to a hash containing any metadata attached
-to the current version of the node
-
-=back
-
-Unless you supply C<include_all_changes>, C<metadata_was> or
-C<metadata_wasnt>, each node will only be returned once regardless of
-how many times it has been changed recently.
-
-By default, the case-sensitivity of both C<metadata_type> and
-C<metadata_value> depends on your database - if it will return rows
-with an attribute value of "Pubs" when you asked for "pubs", or not.
-If you supply a true value to the C<ignore_case> parameter, then you
-can be sure of its being case-insensitive.  This is recommended.
+  my @nodes = $wiki->store->list_recent_changes( days => 7 );
 
 =cut
 
@@ -523,8 +450,8 @@ sub list_recent_changes {
 
   my @nodes = $wiki->list_unmoderated_nodes();
   my @nodes = $wiki->list_unmoderated_nodes(
-												only_where_latest => 1
-											);
+                                                only_where_latest => 1
+                                            );
 
   $nodes[0]->{'name'}              # The name of the node
   $nodes[0]->{'node_id'}           # The id of the node
@@ -538,6 +465,7 @@ sub list_recent_changes {
    the latest version needs moderating are returned.
   Otherwise, all node versions (including old ones, and possibly multiple
    per node) are returned.
+
 =cut
 
 sub list_unmoderated_nodes {
@@ -557,7 +485,9 @@ sub list_unmoderated_nodes {
 
 Returns all the versions of a node, optionally including the content
 and metadata, as an array of hashes (newest versions first).
+
 =cut
+
 sub list_node_all_versions {
     my ($self,@argsarray) = @_;
 
@@ -572,18 +502,19 @@ sub list_node_all_versions {
 }
 
 =item B<list_last_version_before>
-	List the last version of every node before a given date.
-	If no version existed before that date, will return undef for version.
-	Returns a hash of id, name, version and date
+    List the last version of every node before a given date.
+    If no version existed before that date, will return undef for version.
+    Returns a hash of id, name, version and date
 
-	my @nv = $wiki->list_last_version_before('2007-01-02 10:34:11')
-	foreach my $data (@nv) {
-		
-	}
+    my @nv = $wiki->list_last_version_before('2007-01-02 10:34:11')
+    foreach my $data (@nv) {
+        
+    }
+
 =cut
+
 sub list_last_version_before {
     my ($self,@argsarray) = @_;
-
     return $self->store->list_last_version_before(@argsarray);
 }
 
@@ -625,8 +556,12 @@ sub node_required_moderation {
     my %node = $self->retrieve_node(@args);
 
     # Return false if it doesn't exist
-    unless(%node) { return 0; }
-    unless($node{node_requires_moderation}) { return 0; }
+    unless(%node) {
+        return 0;
+    }
+    unless($node{node_requires_moderation}) {
+        return 0;
+    }
 
     # Otherwise return the state of the flag
     return $node{node_requires_moderation};
@@ -655,7 +590,7 @@ sub delete_node {
     my %args = ( scalar @_ == 1 ) ? ( name => $_[0] ) : @_;
 
     my @plugins = $self->get_registered_plugins;
-	my $plugins_ref = \@plugins if scalar @plugins;
+    my $plugins_ref = \@plugins if scalar @plugins;
 
     return 1 unless $self->node_exists( $args{name} );
     $self->store->delete_node(
@@ -672,7 +607,7 @@ sub delete_node {
         my $new_current_content = $self->retrieve_node( $args{name } );
         if ( $new_current_content ) {
             $search->index_node( $args{name}, $new_current_content );
-	}
+        }
     }
 
     return 1;
@@ -899,17 +834,19 @@ sub write_node {
     }
 
     my %data = ( node     => $node,
-		 content  => $content,
-		 checksum => $checksum,
-		 metadata => $metadata,
-		 requires_moderation => $requires_moderation );
+         content  => $content,
+         checksum => $checksum,
+         metadata => $metadata,
+         requires_moderation => $requires_moderation );
     $data{links_to} = \@links_to if scalar @links_to;
     my @plugins = $self->get_registered_plugins;
     $data{plugins} = \@plugins if scalar @plugins;
 
     my $store = $self->store;
     my $ret = $store->check_and_write_node( %data ) or return 0;
-	if($ret == -1) { return -1; }
+    if($ret == -1) {
+        return -1;
+    }
 
     my $search = $self->{_search};
     if ($search and $content) {
@@ -939,9 +876,9 @@ sub format {
     # Nasty hack to work around an HTML::Parser deficiency
     # see http://rt.cpan.org/NoAuth/Bug.html?id=7014
     if ($CAN_USE_ENCODE) {
-      if (Encode::is_utf8($raw)) {
-        Encode::_utf8_on( $result );
-      }
+        if (Encode::is_utf8($raw)) {
+            Encode::_utf8_on( $result );
+        }
     }
 
     return $result;
@@ -1091,7 +1028,7 @@ Questions should go to cgi-wiki-dev@earth.li.
 =head1 COPYRIGHT
 
      Copyright (C) 2002-2004 Kake Pugh.  All Rights Reserved.
-     Copyright (C) 2006 the Wiki::Toolkit team. All Rights Reserved.
+     Copyright (C) 2006-2008 the Wiki::Toolkit team. All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

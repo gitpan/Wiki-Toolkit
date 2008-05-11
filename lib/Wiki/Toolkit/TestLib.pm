@@ -4,9 +4,10 @@ use strict;
 use Carp "croak";
 use Wiki::Toolkit;
 use Wiki::Toolkit::TestConfig;
+use DBI;
 
 use vars qw( $VERSION @wiki_info );
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 =head1 NAME
 
@@ -42,19 +43,31 @@ search and storage backends.
 my %configured = %Wiki::Toolkit::TestConfig::config;
 
 my %datastore_info;
+
+my %dsn_prefix = ( MySQL  => "dbi:mysql:",
+                   Pg     => "dbi:Pg:dbname=",
+                   SQLite => "dbi:SQLite:dbname=");
+
 foreach my $dbtype (qw( MySQL Pg SQLite )) {
     if ( $configured{$dbtype}{dbname} ) {
         my %config = %{ $configured{$dbtype} };
-	my $store_class = "Wiki::Toolkit::Store::$dbtype";
-	my $setup_class = "Wiki::Toolkit::Setup::$dbtype";
+        my $store_class = "Wiki::Toolkit::Store::$dbtype";
+        my $setup_class = "Wiki::Toolkit::Setup::$dbtype";
+        my $dsn = $dsn_prefix{$dbtype}.$config{dbname};
+        my $err;
+        if ($err = _test_dsn( $dsn, $config{dbuser}, $config{dbpass}, $config{dbhost})) {
+            warn "connecting to test $dbtype database failed: $err\n";
+            warn "will skip $dbtype tests\n";
+            next;
+        }
         $datastore_info{$dbtype} = {
                                      class  => $store_class,
                                      setup_class => $setup_class,
                                      params => {
                                                  dbname => $config{dbname},
-		       		                 dbuser => $config{dbuser},
-				                 dbpass => $config{dbpass},
-			                         dbhost => $config{dbhost},
+                                                 dbuser => $config{dbuser},
+                                                 dbpass => $config{dbpass},
+                                                 dbhost => $config{dbhost},
                                                },
                                    };
     }
@@ -67,9 +80,9 @@ if ( $configured{dbixfts} && $configured{MySQL}{dbname} ) {
     $dbixfts_info{MySQL} = {
                              db_params => {
                                             dbname => $config{dbname},
-		       		            dbuser => $config{dbuser},
-				            dbpass => $config{dbpass},
-			                    dbhost => $config{dbhost},
+                                            dbuser => $config{dbuser},
+                                            dbpass => $config{dbpass},
+                                            dbhost => $config{dbhost},
                                           },
                            };
 }
@@ -84,7 +97,7 @@ if ( $configured{search_invertedindex} && $configured{MySQL}{dbname} ) {
                                         -db_name    => $config{dbname},
                                         -username   => $config{dbuser},
                                         -password   => $config{dbpass},
-	   	                        -hostname   => $config{dbhost} || "",
+                                        -hostname   => $config{dbhost} || "",
                                         -table_name => 'siindex',
                                         -lock_mode  => 'EX',
                                       },
@@ -105,7 +118,7 @@ if (    $configured{search_invertedindex}
                                      -db_name    => $config{dbname},
                                      -username   => $config{dbuser},
                                      -password   => $config{dbpass},
-	   	                     -hostname   => $config{dbhost},
+                                     -hostname   => $config{dbhost},
                                      -table_name => 'siindex',
                                      -lock_mode  => 'EX',
                                    },
@@ -134,25 +147,25 @@ if ( $configured{plucene} ) {
 # Database-specific searchers.
 push @wiki_info, { datastore_info => $datastore_info{MySQL},
                    dbixfts_info   => $dbixfts_info{MySQL} }
-  if ( $datastore_info{MySQL} and $dbixfts_info{MySQL} );
+    if ( $datastore_info{MySQL} and $dbixfts_info{MySQL} );
 push @wiki_info, { datastore_info => $datastore_info{MySQL},
                    sii_info       => $sii_info{MySQL} }
-  if ( $datastore_info{MySQL} and $sii_info{MySQL} );
+    if ( $datastore_info{MySQL} and $sii_info{MySQL} );
 push @wiki_info, { datastore_info => $datastore_info{Pg},
                    sii_info       => $sii_info{Pg} }
-  if ( $datastore_info{Pg} and $sii_info{Pg} );
+    if ( $datastore_info{Pg} and $sii_info{Pg} );
 
 # All stores are compatible with the default S::II search, and with Plucene,
 # and with no search.
 foreach my $dbtype ( qw( MySQL Pg SQLite ) ) {
     push @wiki_info, { datastore_info => $datastore_info{$dbtype},
                        sii_info       => $sii_info{DB_File} }
-      if ( $datastore_info{$dbtype} and $sii_info{DB_File} );
+        if ( $datastore_info{$dbtype} and $sii_info{DB_File} );
     push @wiki_info, { datastore_info => $datastore_info{$dbtype},
                        plucene_path   => $plucene_path }
-      if ( $datastore_info{$dbtype} and $plucene_path );
+        if ( $datastore_info{$dbtype} and $plucene_path );
     push @wiki_info, { datastore_info => $datastore_info{$dbtype} }
-      if $datastore_info{$dbtype};
+        if $datastore_info{$dbtype};
 }
 
 =head1 METHODS
@@ -221,14 +234,14 @@ sub new_wiki {
         require Wiki::Toolkit::Store::MySQL;
         my %dbconfig = %{ $fts_info{db_params} };
         my $dsn = Wiki::Toolkit::Store::MySQL->_dsn( $dbconfig{dbname},
-                                                 $dbconfig{dbhost}  );
+                                                     $dbconfig{dbhost}  );
         my $dbh = DBI->connect( $dsn, $dbconfig{dbuser}, $dbconfig{dbpass},
                        { PrintError => 0, RaiseError => 1, AutoCommit => 1 } )
-          or croak "Can't connect to $dbconfig{dbname} using $dsn: " . DBI->errstr;
+            or croak "Can't connect to $dbconfig{dbname} using $dsn: " . DBI->errstr;
         require Wiki::Toolkit::Setup::DBIxFTSMySQL;
         Wiki::Toolkit::Setup::DBIxFTSMySQL::setup(
-                                 @dbconfig{ qw( dbuser dbname dbpass dbhost ) }
-                                             );
+                                 @dbconfig{ qw( dbname dbuser dbpass dbhost ) }
+                                                 );
         require Wiki::Toolkit::Search::DBIxFTS;
         $wiki_config{search} = Wiki::Toolkit::Search::DBIxFTS->new( dbh => $dbh );
     } elsif ( $details->{sii_info} ) {
@@ -246,7 +259,7 @@ sub new_wiki {
         unlink <$dir/*>; # don't die if false since there may be no files
         if ( -d $dir ) {
             rmdir $dir or die $!;
-	}
+    }
         mkdir $dir or die $!;
         $wiki_config{search} = Wiki::Toolkit::Search::Plucene->new( path => $dir );
     }
@@ -255,6 +268,15 @@ sub new_wiki {
     my $wiki = Wiki::Toolkit->new( %wiki_config );
     $$self++;
     return $wiki;
+}
+
+sub _test_dsn {
+    my ( $dsn, $dbuser, $dbpass, $dbhost ) = @_;
+    $dsn .= ";host=$dbhost" if $dbhost;
+    my $dbh = eval {
+        DBI->connect($dsn, $dbuser, $dbpass, {RaiseError => 1});
+    };
+    return $@;
 }
 
 =back
@@ -270,6 +292,7 @@ Kake Pugh (kake@earth.li).
 =head1 COPYRIGHT
 
      Copyright (C) 2003-2004 Kake Pugh.  All Rights Reserved.
+     Copyright (C) 2008 the Wiki::Toolkit team. All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
