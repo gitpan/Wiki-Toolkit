@@ -44,18 +44,20 @@ my %configured = %Wiki::Toolkit::TestConfig::config;
 
 my %datastore_info;
 
-my %dsn_prefix = ( MySQL  => "dbi:mysql:",
-                   Pg     => "dbi:Pg:dbname=",
-                   SQLite => "dbi:SQLite:dbname=");
-
 foreach my $dbtype (qw( MySQL Pg SQLite )) {
     if ( $configured{$dbtype}{dbname} ) {
         my %config = %{ $configured{$dbtype} };
         my $store_class = "Wiki::Toolkit::Store::$dbtype";
         my $setup_class = "Wiki::Toolkit::Setup::$dbtype";
-        my $dsn = $dsn_prefix{$dbtype}.$config{dbname};
+        eval "require $store_class";
+        if ( $@ ) {
+            warn "Couldn't require $store_class: $@\n";
+            warn "Will skip $dbtype tests.\n";
+            next;
+        }
+        my $dsn = $store_class->_dsn( @config{ qw( dbname dbhost dbport ) } );
         my $err;
-        if ($err = _test_dsn( $dsn, $config{dbuser}, $config{dbpass}, $config{dbhost})) {
+        if ( $err = _test_dsn( $dsn, $config{dbuser}, $config{dbpass} ) ) {
             warn "connecting to test $dbtype database failed: $err\n";
             warn "will skip $dbtype tests\n";
             next;
@@ -69,6 +71,7 @@ foreach my $dbtype (qw( MySQL Pg SQLite )) {
                                                  dbpass => $config{dbpass},
                                                  dbhost => $config{dbhost},
                                                },
+                                     dsn    => $dsn
                                    };
     }
 }
@@ -270,9 +273,26 @@ sub new_wiki {
     return $wiki;
 }
 
+=item B<configured_databases>
+
+  my @configured_databases = $iterator->configured_databases;
+
+  Returns the @configured_databases array detailing configured test databases.
+  Useful for very low-level testing only.
+
+=cut
+
+sub configured_databases {
+    my @configured_databases;
+    foreach my $dbtype (qw( MySQL Pg SQLite )) {
+        push @configured_databases, $datastore_info{$dbtype}
+            if $datastore_info{$dbtype};
+    }
+    return @configured_databases;
+}
+
 sub _test_dsn {
-    my ( $dsn, $dbuser, $dbpass, $dbhost ) = @_;
-    $dsn .= ";host=$dbhost" if $dbhost;
+    my ( $dsn, $dbuser, $dbpass ) = @_;
     my $dbh = eval {
         DBI->connect($dsn, $dbuser, $dbpass, {RaiseError => 1});
     };

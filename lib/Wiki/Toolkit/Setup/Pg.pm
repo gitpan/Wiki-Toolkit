@@ -2,26 +2,87 @@ package Wiki::Toolkit::Setup::Pg;
 
 use strict;
 
-use vars qw( @ISA $VERSION );
+use vars qw( @ISA $VERSION $SCHEMA_VERSION );
 
 use Wiki::Toolkit::Setup::Database;
 
 @ISA = qw( Wiki::Toolkit::Setup::Database );
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 use DBI;
 use Carp;
 
-my %create_sql = (
-    schema_info => [ qq|
+$SCHEMA_VERSION = $VERSION*100;
+
+my $create_sql = {
+    8 => {
+        schema_info => [ qq|
 CREATE TABLE schema_info (
   version   integer      NOT NULL default 0
 )
 |, qq|
-INSERT INTO schema_info VALUES (|.($VERSION*100).qq|)
+INSERT INTO schema_info VALUES (8)
 | ],
 
-    node => [ qq|
+        node => [ qq|
+CREATE SEQUENCE node_seq
+|, qq|
+CREATE TABLE node (
+  id        integer      NOT NULL DEFAULT NEXTVAL('node_seq'),
+  name      varchar(200) NOT NULL DEFAULT '',
+  version   integer      NOT NULL default 0,
+  text      text         NOT NULL default '',
+  modified  timestamp without time zone    default NULL,
+  CONSTRAINT pk_id PRIMARY KEY (id)
+)
+|, qq|
+CREATE UNIQUE INDEX node_name ON node (name)
+| ],
+
+        content => [ qq|
+CREATE TABLE content (
+  node_id   integer      NOT NULL,
+  version   integer      NOT NULL default 0,
+  text      text         NOT NULL default '',
+  modified  timestamp without time zone    default NULL,
+  comment   text         NOT NULL default '',
+  CONSTRAINT pk_node_id PRIMARY KEY (node_id,version),
+  CONSTRAINT fk_node_id FOREIGN KEY (node_id) REFERENCES node (id)
+)
+| ],
+
+        internal_links => [ qq|
+CREATE TABLE internal_links (
+  link_from varchar(200) NOT NULL default '',
+  link_to   varchar(200) NOT NULL default ''
+)
+|, qq|
+CREATE UNIQUE INDEX internal_links_pkey ON internal_links (link_from, link_to)
+| ],
+
+        metadata => [ qq|
+CREATE TABLE metadata (
+  node_id        integer      NOT NULL,
+  version        integer      NOT NULL default 0,
+  metadata_type  varchar(200) NOT NULL DEFAULT '',
+  metadata_value text         NOT NULL DEFAULT '',
+  CONSTRAINT fk_node_id FOREIGN KEY (node_id) REFERENCES node (id)
+)
+|, qq|
+CREATE INDEX metadata_index ON metadata (node_id, version, metadata_type, metadata_value)
+| ]
+
+    },
+    9 => {
+        schema_info => [ qq|
+CREATE TABLE schema_info (
+  version   integer      NOT NULL default 0
+)
+|, qq|
+INSERT INTO schema_info VALUES (9)
+| ],
+
+        node => [ qq|
 CREATE SEQUENCE node_seq
 |, qq|
 CREATE TABLE node (
@@ -37,7 +98,7 @@ CREATE TABLE node (
 CREATE UNIQUE INDEX node_name ON node (name)
 | ],
 
-    content => [ qq|
+        content => [ qq|
 CREATE TABLE content (
   node_id   integer      NOT NULL,
   version   integer      NOT NULL default 0,
@@ -50,7 +111,7 @@ CREATE TABLE content (
 )
 | ],
 
-    internal_links => [ qq|
+        internal_links => [ qq|
 CREATE TABLE internal_links (
   link_from varchar(200) NOT NULL default '',
   link_to   varchar(200) NOT NULL default ''
@@ -59,7 +120,7 @@ CREATE TABLE internal_links (
 CREATE UNIQUE INDEX internal_links_pkey ON internal_links (link_from, link_to)
 | ],
 
-    metadata => [ qq|
+        metadata => [ qq|
 CREATE TABLE metadata (
   node_id        integer      NOT NULL,
   version        integer      NOT NULL default 0,
@@ -70,8 +131,69 @@ CREATE TABLE metadata (
 |, qq|
 CREATE INDEX metadata_index ON metadata (node_id, version, metadata_type, metadata_value)
 | ]
+    },
+    10 => {
+        schema_info => [ qq|
+CREATE TABLE schema_info (
+  version   integer      NOT NULL default 0
+)
+|, qq|
+INSERT INTO schema_info VALUES (10)
+| ],
 
-);
+        node => [ qq|
+CREATE SEQUENCE node_seq
+|, qq|
+CREATE TABLE node (
+  id        integer      NOT NULL DEFAULT NEXTVAL('node_seq'),
+  name      varchar(200) NOT NULL DEFAULT '',
+  version   integer      NOT NULL default 0,
+  text      text         NOT NULL default '',
+  modified  timestamp without time zone    default NULL,
+  moderate  boolean      NOT NULL default '0',
+  CONSTRAINT pk_id PRIMARY KEY (id)
+)
+|, qq|
+CREATE UNIQUE INDEX node_name ON node (name)
+| ],
+
+        content => [ qq|
+CREATE TABLE content (
+  node_id   integer      NOT NULL,
+  version   integer      NOT NULL default 0,
+  text      text         NOT NULL default '',
+  modified  timestamp without time zone    default NULL,
+  comment   text         NOT NULL default '',
+  moderated boolean      NOT NULL default '1',
+  verified  timestamp without time zone    default NULL,
+  verified_info text     NOT NULL default '',
+  CONSTRAINT pk_node_id PRIMARY KEY (node_id,version),
+  CONSTRAINT fk_node_id FOREIGN KEY (node_id) REFERENCES node (id)
+)
+| ],
+
+        internal_links => [ qq|
+CREATE TABLE internal_links (
+  link_from varchar(200) NOT NULL default '',
+  link_to   varchar(200) NOT NULL default ''
+)
+|, qq|
+CREATE UNIQUE INDEX internal_links_pkey ON internal_links (link_from, link_to)
+| ],
+
+        metadata => [ qq|
+CREATE TABLE metadata (
+  node_id        integer      NOT NULL,
+  version        integer      NOT NULL default 0,
+  metadata_type  varchar(200) NOT NULL DEFAULT '',
+  metadata_value text         NOT NULL DEFAULT '',
+  CONSTRAINT fk_node_id FOREIGN KEY (node_id) REFERENCES node (id)
+)
+|, qq|
+CREATE INDEX metadata_index ON metadata (node_id, version, metadata_type, metadata_value)
+| ]
+    },
+};
 
 my %upgrades = (
     old_to_8 => [ qq|
@@ -109,6 +231,11 @@ ALTER TABLE metadata ALTER COLUMN node_id SET NOT NULL;
 ALTER TABLE metadata DROP COLUMN node;
 ALTER TABLE metadata ADD CONSTRAINT fk_node_id FOREIGN KEY (node_id) REFERENCES node (id);
 CREATE INDEX metadata_index ON metadata (node_id, version, metadata_type, metadata_value)
+|,
+
+qq|
+CREATE TABLE schema_info (version integer NOT NULL default 0);
+INSERT INTO schema_info VALUES (8)
 |
 ],
 
@@ -122,13 +249,24 @@ ALTER TABLE content ADD COLUMN moderated boolean;
 UPDATE content SET moderated = '1';
 ALTER TABLE content ALTER COLUMN moderated SET DEFAULT '1';
 ALTER TABLE content ALTER COLUMN moderated SET NOT NULL;
+UPDATE schema_info SET version = 9;
+|
+],
+
+'9_to_10' => [ qq|
+ALTER TABLE content ADD COLUMN verified timestamp without time zone default NULL;
+ALTER TABLE content ADD COLUMN verified_info text NOT NULL default '';
+|, qq|
+UPDATE schema_info SET version = 10;
 |
 ],
 
 );
 
-my @old_to_9 = ($upgrades{'old_to_8'},$upgrades{'8_to_9'});
-$upgrades{'old_to_9'} = \@old_to_9;
+my @old_to_10 = ($upgrades{'old_to_8'},$upgrades{'8_to_9'},$upgrades{'9_to_10'});
+my @eight_to_10 = ($upgrades{'8_to_9'},$upgrades{'9_to_10'});
+$upgrades{'old_to_10'} = \@old_to_10;
+$upgrades{'8_to_10'} = \@eight_to_10;
 
 =head1 NAME
 
@@ -179,34 +317,38 @@ sub setup {
     my @args = @_;
     my $dbh = _get_dbh( @args );
     my $disconnect_required = _disconnect_required( @args );
+    my $wanted_schema = _get_wanted_schema( @args ) || $SCHEMA_VERSION;
+
+    die "No schema information for requested schema version $wanted_schema\n"
+        unless $create_sql->{$wanted_schema};
 
     # Check whether tables exist
     my $sql = "SELECT tablename FROM pg_tables
                WHERE tablename in ("
-            . join( ",", map { $dbh->quote($_) } keys %create_sql ) . ")";
+            . join( ",", map { $dbh->quote($_) } keys %{$create_sql->{$wanted_schema}} ) . ")";
     my $sth = $dbh->prepare($sql) or croak $dbh->errstr;
     $sth->execute;
     my %tables;
     while ( my $table = $sth->fetchrow_array ) {
-        exists $create_sql{$table} and $tables{$table} = 1;
+        exists $create_sql->{$wanted_schema}->{$table} and $tables{$table} = 1;
     }
 
     # Do we need to upgrade the schema of existing tables?
     # (Don't check if no tables currently exist)
     my $upgrade_schema;
     if(scalar keys %tables > 0) {
-        $upgrade_schema = Wiki::Toolkit::Setup::Database::get_database_upgrade_required($dbh,$VERSION);
+        $upgrade_schema = Wiki::Toolkit::Setup::Database::get_database_upgrade_required($dbh,$wanted_schema);
     } else {
         print "Skipping schema upgrade check - no tables found\n";
     }
 
     # Set up tables if not found
-    foreach my $required ( reverse sort keys %create_sql ) {
+    foreach my $required ( reverse sort keys %{$create_sql->{$wanted_schema}} ) {
         if ( $tables{$required} ) {
             print "Table $required already exists... skipping...\n";
         } else {
             print "Creating table $required... done\n";
-            foreach my $sql ( @{ $create_sql{$required} } ) {
+            foreach my $sql ( @{ $create_sql->{$wanted_schema}->{$required} } ) {
                 $dbh->do($sql) or croak $dbh->errstr;
             }
         }
@@ -271,7 +413,7 @@ sub cleardb {
     print "Dropping tables... ";
     my $sql = "SELECT tablename FROM pg_tables
                WHERE tablename in ("
-            . join( ",", map { $dbh->quote($_) } keys %create_sql ) . ")";
+            . join( ",", map { $dbh->quote($_) } keys %{$create_sql->{$SCHEMA_VERSION}} ) . ")";
     foreach my $tableref (@{$dbh->selectall_arrayref($sql)}) {
         $dbh->do("DROP TABLE $tableref->[0] CASCADE") or croak $dbh->errstr;
     }
@@ -311,6 +453,19 @@ sub _get_dbh {
                       dbpass => $_[2],
                       dbhost => $_[3],
                     );
+}
+
+sub _get_wanted_schema {
+    # Database handle passed in.
+    if ( ref $_[0] and ref $_[0] eq 'DBI::db' ) {
+        return undef;
+    }
+
+    # Args passed as hashref.
+    if ( ref $_[0] and ref $_[0] eq 'HASH' ) {
+        my %args = %{$_[0]};
+        return $args{wanted_schema};
+    }
 }
 
 sub _disconnect_required {

@@ -2,26 +2,77 @@ package Wiki::Toolkit::Setup::MySQL;
 
 use strict;
 
-use vars qw( @ISA $VERSION );
+use vars qw( @ISA $VERSION $SCHEMA_VERSION );
 
 use Wiki::Toolkit::Setup::Database;
 
 @ISA = qw( Wiki::Toolkit::Setup::Database );
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 use DBI;
 use Carp;
 
-my %create_sql = (
-    schema_info => [ qq|
+$SCHEMA_VERSION = $VERSION*100;
+
+my $create_sql = {
+    8 => {
+        schema_info => [ qq|
 CREATE TABLE schema_info (
   version   int(10)      NOT NULL default 0
 )
 |, qq|
-INSERT INTO schema_info VALUES (|.($VERSION*100).qq|)
+INSERT INTO schema_info VALUES (8)
 | ],
 
-    node => [ qq|
+        node => [ qq|
+CREATE TABLE node (
+  id        integer      NOT NULL AUTO_INCREMENT,
+  name      varchar(200) NOT NULL DEFAULT '',
+  version   int(10)      NOT NULL default 0,
+  text      mediumtext   NOT NULL default '',
+  modified  datetime     default NULL,
+  PRIMARY KEY (id)
+)
+| ],
+
+        content => [ qq|
+CREATE TABLE content (
+  node_id   integer      NOT NULL,
+  version   int(10)      NOT NULL default 0,
+  text      mediumtext   NOT NULL default '',
+  modified  datetime     default NULL,
+  comment   mediumtext   NOT NULL default '',
+  PRIMARY KEY (node_id, version)
+)
+| ],
+        internal_links => [ qq|
+CREATE TABLE internal_links (
+  link_from varchar(200) NOT NULL default '',
+  link_to   varchar(200) NOT NULL default '',
+  PRIMARY KEY (link_from, link_to)
+)
+| ],
+        metadata => [ qq|
+CREATE TABLE metadata (
+  node_id        integer      NOT NULL,
+  version        int(10)      NOT NULL default 0,
+  metadata_type  varchar(200) NOT NULL DEFAULT '',
+  metadata_value mediumtext   NOT NULL DEFAULT ''
+)
+|, qq|
+CREATE INDEX metadata_index ON metadata(node_id, version, metadata_type, metadata_value(10))
+| ]
+    },
+    9 => {
+        schema_info => [ qq|
+CREATE TABLE schema_info (
+  version   int(10)      NOT NULL default 0
+)
+|, qq|
+INSERT INTO schema_info VALUES (9)
+| ],
+
+        node => [ qq|
 CREATE TABLE node (
   id        integer      NOT NULL AUTO_INCREMENT,
   name      varchar(200) NOT NULL DEFAULT '',
@@ -33,7 +84,7 @@ CREATE TABLE node (
 )
 | ],
 
-    content => [ qq|
+        content => [ qq|
 CREATE TABLE content (
   node_id   integer      NOT NULL,
   version   int(10)      NOT NULL default 0,
@@ -44,14 +95,14 @@ CREATE TABLE content (
   PRIMARY KEY (node_id, version)
 )
 | ],
-    internal_links => [ qq|
+        internal_links => [ qq|
 CREATE TABLE internal_links (
   link_from varchar(200) NOT NULL default '',
   link_to   varchar(200) NOT NULL default '',
   PRIMARY KEY (link_from, link_to)
 )
 | ],
-    metadata => [ qq|
+        metadata => [ qq|
 CREATE TABLE metadata (
   node_id        integer      NOT NULL,
   version        int(10)      NOT NULL default 0,
@@ -61,6 +112,89 @@ CREATE TABLE metadata (
 |, qq|
 CREATE INDEX metadata_index ON metadata(node_id, version, metadata_type, metadata_value(10))
 | ]
+    },
+    10 => {
+        schema_info => [ qq|
+CREATE TABLE schema_info (
+  version   int(10)      NOT NULL default 0
+)
+|, qq|
+INSERT INTO schema_info VALUES (10)
+| ],
+
+        node => [ qq|
+CREATE TABLE node (
+  id        integer      NOT NULL AUTO_INCREMENT,
+  name      varchar(200) NOT NULL DEFAULT '',
+  version   int(10)      NOT NULL default 0,
+  text      mediumtext   NOT NULL default '',
+  modified  datetime     default NULL,
+  moderate  bool         NOT NULL default '0',
+  PRIMARY KEY (id)
+)
+|, qq|
+CREATE UNIQUE INDEX node_name ON node (name)
+| ],
+
+        content => [ qq|
+CREATE TABLE content (
+  node_id   integer      NOT NULL,
+  version   int(10)      NOT NULL default 0,
+  text      mediumtext   NOT NULL default '',
+  modified  datetime     default NULL,
+  comment   mediumtext   NOT NULL default '',
+  moderated bool         NOT NULL default '1',
+  verified  datetime     default NULL,
+  verified_info mediumtext NOT NULL default '',
+  PRIMARY KEY (node_id, version)
+)
+| ],
+        internal_links => [ qq|
+CREATE TABLE internal_links (
+  link_from varchar(200) NOT NULL default '',
+  link_to   varchar(200) NOT NULL default '',
+  PRIMARY KEY (link_from, link_to)
+)
+| ],
+        metadata => [ qq|
+CREATE TABLE metadata (
+  node_id        integer      NOT NULL,
+  version        int(10)      NOT NULL default 0,
+  metadata_type  varchar(200) NOT NULL DEFAULT '',
+  metadata_value mediumtext   NOT NULL DEFAULT ''
+)
+|, qq|
+CREATE INDEX metadata_index ON metadata(node_id, version, metadata_type, metadata_value(10))
+| ]
+    },
+};
+
+my %fetch_upgrades = (
+    old_to_8  => 1,
+    old_to_9  => 1,
+    old_to_10 => 1,
+    '8_to_9'  => 1,
+    '8_to_10' => 1,
+);
+
+my %upgrades = (
+    '9_to_10' => [ sub {
+        my $dbh = shift;
+        my $sth = $dbh->prepare('SHOW INDEX FROM node WHERE key_name="node_name"');
+        $sth->execute();
+        unless ( $sth->rows ) {
+            $dbh->do('CREATE UNIQUE INDEX node_name ON node (name)')
+                or croak $dbh->errstr;
+        }
+    },
+    qq|
+ALTER TABLE content ADD COLUMN verified datetime default NULL
+|, qq|
+ALTER TABLE content ADD COLUMN verified_info mediumtext NOT NULL default ''
+|, qq|
+UPDATE schema_info SET version = 10
+| ]
+
 );
 
 =head1 NAME
@@ -112,44 +246,50 @@ sub setup {
     my @args = @_;
     my $dbh = _get_dbh( @args );
     my $disconnect_required = _disconnect_required( @args );
+    my $wanted_schema = _get_wanted_schema( @args ) || $SCHEMA_VERSION;
+
+    die "No schema information for requested schema version $wanted_schema\n"
+        unless $create_sql->{$wanted_schema};
 
     # Check whether tables exist
-    my %tables = fetch_tables_listing($dbh);
+    my %tables = fetch_tables_listing($dbh, $wanted_schema);
 
     # Do we need to upgrade the schema of existing tables?
     # (Don't check if no tables currently exist)
     my $upgrade_schema;
     my @cur_data;
     if(scalar keys %tables > 0) {
-        $upgrade_schema = Wiki::Toolkit::Setup::Database::get_database_upgrade_required($dbh,$VERSION);
+        $upgrade_schema = Wiki::Toolkit::Setup::Database::get_database_upgrade_required($dbh,$wanted_schema);
     }
     if($upgrade_schema) {
-        # Grab current data
-        print "Upgrading: $upgrade_schema\n";
-        @cur_data = eval("&Wiki::Toolkit::Setup::Database::fetch_upgrade_".$upgrade_schema."(\$dbh)");
-        if($@) { warn $@; }
+        if ($fetch_upgrades{$upgrade_schema}) {
+            # Grab current data
+            print "Upgrading: $upgrade_schema\n";
+            @cur_data = eval("&Wiki::Toolkit::Setup::Database::fetch_upgrade_".$upgrade_schema."(\$dbh)");
+            if($@) { warn $@; }
 
-        # Check to make sure we can create, index and drop tables
-        # before doing any more
-        my $perm_check = Wiki::Toolkit::Setup::Database::perm_check($dbh);
-        if ($perm_check) {
-            die "Unable to create/drop database tables as required by upgrade: $perm_check";
-        }
+            # Check to make sure we can create, index and drop tables
+            # before doing any more
+            my $perm_check = Wiki::Toolkit::Setup::Database::perm_check($dbh);
+            if ($perm_check) {
+                die "Unable to create/drop database tables as required by upgrade: $perm_check";
+            }
         
-        # Drop the current tables
-        cleardb($dbh);
+            # Drop the current tables
+            cleardb($dbh);
 
-        # Grab new list of tables
-        %tables = fetch_tables_listing($dbh);
+            # Grab new list of tables
+            %tables = fetch_tables_listing($dbh, $wanted_schema);
+        }
     }
 
     # Set up tables if not found
-    foreach my $required ( keys %create_sql ) {
+    foreach my $required ( keys %{$create_sql->{$wanted_schema}} ) {
         if ( $tables{$required} ) {
             print "Table $required already exists... skipping...\n";
         } else {
             print "Creating table $required... done\n";
-            foreach my $sql ( @{ $create_sql{$required} } ) {
+            foreach my $sql ( @{$create_sql->{$wanted_schema}->{$required}} ) {
                 $dbh->do($sql) or croak $dbh->errstr;
             }
         }
@@ -157,7 +297,23 @@ sub setup {
 
     # If upgrading, load in the new data
     if($upgrade_schema) {
-        Wiki::Toolkit::Setup::Database::bulk_data_insert($dbh,@cur_data);
+        if ($fetch_upgrades{$upgrade_schema}) {
+            Wiki::Toolkit::Setup::Database::bulk_data_insert($dbh,@cur_data);
+        } else {
+            print "Upgrading schema: $upgrade_schema\n";
+            my @updates = @{$upgrades{$upgrade_schema}};
+            foreach my $update (@updates) {
+                if(ref($update) eq "CODE") {
+                    &$update($dbh);
+                } elsif(ref($update) eq "ARRAY") {
+                    foreach my $nupdate (@$update) {
+                        $dbh->do($nupdate);
+                    }
+                } else {
+                    $dbh->do($update);
+                }
+            } 
+        }
     }
 
     # Clean up if we made our own dbh.
@@ -167,13 +323,14 @@ sub setup {
 # Internal method - what Wiki::Toolkit tables are defined?
 sub fetch_tables_listing {
     my $dbh = shift;
+    my $wanted_schema = shift;
 
     # Check what tables exist
     my $sth = $dbh->prepare("SHOW TABLES") or croak $dbh->errstr;
     $sth->execute;
     my %tables;
     while ( my $table = $sth->fetchrow_array ) {
-        exists $create_sql{$table} and $tables{$table} = 1;
+        exists $create_sql->{$wanted_schema}->{$table} and $tables{$table} = 1;
     }
     return %tables;
 }
@@ -214,7 +371,7 @@ sub cleardb {
     my $disconnect_required = _disconnect_required( @args );
 
     print "Dropping tables... ";
-    $dbh->do("DROP TABLE IF EXISTS " . join( ",", keys %create_sql ) )
+    $dbh->do("DROP TABLE IF EXISTS " . join( ",", keys %{$create_sql->{$SCHEMA_VERSION}} ) )
       or croak $dbh->errstr;
     print "done\n";
 
@@ -245,6 +402,19 @@ sub _get_dbh {
                       dbpass => $_[2],
                       dbhost => $_[3],
                     );
+}
+
+sub _get_wanted_schema {
+    # Database handle passed in.
+    if ( ref $_[0] and ref $_[0] eq 'DBI::db' ) {
+        return undef;
+    }
+
+    # Args passed as hashref.
+    if ( ref $_[0] and ref $_[0] eq 'HASH' ) {
+        my %args = %{$_[0]};
+        return $args{wanted_schema};
+    }
 }
 
 sub _disconnect_required {

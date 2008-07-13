@@ -14,21 +14,21 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 b673703cac708e96676c938ebe0f627f869a0832 Changes
+SHA1 10912a02285ccffb5094928f799acb3bed166a14 Changes
 SHA1 eef58741b82a1f029e62cc854755dfc2f4ada7b5 INSTALL
-SHA1 762befe822b42c5d3e54fcb49b63f1243bbd7685 MANIFEST
-SHA1 35f2e5e92c7a877ae02f4cdc2343476026d00073 META.yml
-SHA1 75a73087b2b0a7a9b085e656d9b9a121cd8752a3 Makefile.PL
+SHA1 376090e42376fe84a97378b19938a05b29081158 MANIFEST
+SHA1 5fc5d58a94c366ba005f37eaa89c68b8b0d13f5a META.yml
+SHA1 a6e49e6e5d41fe812223748c2c519a757c6f3ec7 Makefile.PL
 SHA1 0c94c05497c37c21a91b89eb94ba2ae2b6c9199d README
 SHA1 b609af99f3e2315da9a65c50f0b6744d61bcd0bc bin/user-setup-mysql-dbixfts.pl
-SHA1 d2e74c333f01855e25ecd6eaeeabbcb19e4f7d71 bin/wiki-toolkit-delete-node
+SHA1 e57ba0b4eaa405246ff6768507c2dff380e4988f bin/wiki-toolkit-delete-node
 SHA1 b0e09c8a7380cf28e0745f5067d199bf600297d8 bin/wiki-toolkit-rename-node
 SHA1 8c77175cffbc7941daa59e3d932d8dbca494a8e3 bin/wiki-toolkit-revert-to-date
 SHA1 53224377b164bfd46034f6e3749c96d9c7fe97ad bin/wiki-toolkit-setupdb
-SHA1 bb641a14e278903de3cec31422c1c55032246de3 lib/Wiki/Toolkit.pm
+SHA1 f33a5ef55c9e7d28f586022f1a7ef5636d7b3512 lib/Wiki/Toolkit.pm
 SHA1 d94d5a76e824fa260e726fbcd256d7b8709d8f00 lib/Wiki/Toolkit/Extending.pod
 SHA1 3ddb85f3ced24edd9f7c284c65a932ee2d9f7120 lib/Wiki/Toolkit/Feed/Atom.pm
-SHA1 9b2daeb27c9780469fc417608e36f7268e82effa lib/Wiki/Toolkit/Feed/Listing.pm
+SHA1 894645cacf0046acdc11b3f615a9ecf80de8fadc lib/Wiki/Toolkit/Feed/Listing.pm
 SHA1 a1e9bbbca921d4156b3a00e6080302295721ba15 lib/Wiki/Toolkit/Feed/RSS.pm
 SHA1 58be3b135711f9abfea1c3715713730e1c8cddc8 lib/Wiki/Toolkit/Formatter/Default.pm
 SHA1 841470aa33e8287e436c6f4680b23a395bad2d43 lib/Wiki/Toolkit/Formatter/Multiple.pm
@@ -39,17 +39,17 @@ SHA1 d66d0d743a74b2b5a86c251d6fd5a3d4c9777a3b lib/Wiki/Toolkit/Search/DBIxFTS.pm
 SHA1 33e8270f8ee16188f885e968bf264500c6a792e9 lib/Wiki/Toolkit/Search/Plucene.pm
 SHA1 9e4b253033b5e5546d1fc2ad208893beffe4b11f lib/Wiki/Toolkit/Search/SII.pm
 SHA1 1ca6436c912d89042e7c4fb6e91c2f5e782e1384 lib/Wiki/Toolkit/Setup/DBIxFTSMySQL.pm
-SHA1 1935810210072f71b5e189fbcb7c847289a5c182 lib/Wiki/Toolkit/Setup/Database.pm
-SHA1 f87cb8e9a5d285aca781739b6e1c6b630d86cd30 lib/Wiki/Toolkit/Setup/MySQL.pm
-SHA1 65d2c37a92c1a093250595fe8edac9e8e554778f lib/Wiki/Toolkit/Setup/Pg.pm
+SHA1 84c0431f366bec41a136de78c54841400ff98f50 lib/Wiki/Toolkit/Setup/Database.pm
+SHA1 1e3bd15f46bfc7ff7ae4ca3f8c3cea6d3e8e6a8b lib/Wiki/Toolkit/Setup/MySQL.pm
+SHA1 9e0ddd7269cce1d5a5178724bd95968d0208f16a lib/Wiki/Toolkit/Setup/Pg.pm
 SHA1 bab05bcb78464ddd3fc5f3a115c379bc77891e78 lib/Wiki/Toolkit/Setup/SII.pm
-SHA1 40b0a9439ff54c07cd5440123ffd62825e5c13f7 lib/Wiki/Toolkit/Setup/SQLite.pm
-SHA1 a39f7db734ac89ee4414d05b6cdf3e20e0177a18 lib/Wiki/Toolkit/Store/Database.pm
+SHA1 e288f9747c63e57aca2beee39d198e744d8a20f8 lib/Wiki/Toolkit/Setup/SQLite.pm
+SHA1 e7730dcb728154091ba240839c08f37e0656c223 lib/Wiki/Toolkit/Store/Database.pm
 SHA1 357dde1bde1752e5d6109e642457f9b7113f4f5a lib/Wiki/Toolkit/Store/MySQL.pm
 SHA1 b90c7daa208e286bde629f4d3827d8aea1237042 lib/Wiki/Toolkit/Store/Pg.pm
 SHA1 45d26d37776fe226eb9e31aaad7fbf87193cc64b lib/Wiki/Toolkit/Store/SQLite.pm
 SHA1 ffb913278dfdf3dcd218df1b8eef34a3b49bec8a lib/Wiki/Toolkit/TestConfig/Utilities.pm
-SHA1 e104b10c5deb5f1c90002f1b934dcd7136807060 lib/Wiki/Toolkit/TestLib.pm
+SHA1 ee63c29410c13110471a7c77bdd584d2397cc16e lib/Wiki/Toolkit/TestLib.pm
 SHA1 dc2fad10c28dd5ab62f907482597a0ea61564f0a t/001_load.t
 SHA1 2a3dcdf422275c94003924b96528fd6cd36d9c32 t/002_datastore_setup.t
 SHA1 3be1c6ad6cf71a10e19bd20b93452cbba987dc02 t/003_instantiate.t
@@ -86,9 +86,7 @@ SHA1 77269781bbea9c82a2def6977fb4389d3f599d50 t/102_multiple_formatter.t
 SHA1 2afd8e2873f64323796e22404898e58f539906ca t/150_plugins.t
 SHA1 11f06774a1c282551424d43b1c5f61b217a6008b t/151_plugin_methods.t
 SHA1 a2abb23523645b1a4db6792b0bc301512bc3e7e9 t/152_pre_plugin_approval.t
-SHA1 52d17b764873682eb3698d422fcea96754e03798 t/295_feed_rss_recentchanges_setup.t
-SHA1 bda92f8eded61520352737b906a4c581401d16c3 t/296_feed_rss_recentchanges_add_test_data.t
-SHA1 b9daee2fc94423777f7a630cfe22ca0ab5b920d4 t/297_feed_rss_recentchanges.t
+SHA1 f1fd13ed7ec7058a6a7710593163eb80282e04ce t/297_feed_rss_recentchanges.t
 SHA1 baae4956bdcdee9dea01a996ecf60f6be3e9836a t/298_feed_rss_node_all_versions.t
 SHA1 69f2b5827cdf152af29a999aa82dcc68a307a095 t/299_feed_rss_gen_node_dist_feed.t
 SHA1 52d17b764873682eb3698d422fcea96754e03798 t/300_feed_atom_setup.t
@@ -96,12 +94,13 @@ SHA1 bda92f8eded61520352737b906a4c581401d16c3 t/301_feed_atom_add_test_data.t
 SHA1 92eaf1aa4de5f882f886711606b287d496c969ba t/302_feed_atom_recentchanges.t
 SHA1 66752df9042f2031826f41774179a07d7e98202a t/303_feed_atom_node_all_versions.t
 SHA1 44a9dd3d35623b6814f73d8b9ae3d28a008685d7 t/304_feed_atom_gen_node_dist_feed.t
+SHA1 1276d219c760f4ba38849c3b068cd4705742f520 t/400_upgrade.t
 SHA1 0944b423c21abacdd290e2c035b58b9a3f72f686 t/lib/Wiki/Toolkit/Plugin/Bar.pm
 SHA1 5ba3e2fa69ad7ca30aa726289275e1e2f7220fc6 t/lib/Wiki/Toolkit/Plugin/Foo.pm
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFIJy0RYzuFKFF44qURAtHvAKCHVYmmmV/0fHZqeRqaHZvVg/G6DQCfV7Gq
-58Tl8/UR4sZINHxAMWi4qDE=
-=OJEJ
+iD8DBQFIeildYzuFKFF44qURAi8qAJ4xhbTm1gyuE/AE9NukPMUKJwm+BwCdG2S0
+zcevRVGgfLzMw3ReoXTk7VI=
+=fYba
 -----END PGP SIGNATURE-----
