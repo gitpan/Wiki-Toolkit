@@ -3,7 +3,7 @@ package Wiki::Toolkit;
 use strict;
 
 use vars qw( $VERSION );
-$VERSION = '0.76';
+$VERSION = '0.77';
 
 use Carp qw(croak carp);
 use Digest::MD5 "md5_hex";
@@ -792,7 +792,8 @@ The final parameter, $requires_moderation (which defaults to false),
 is ignored except on new nodes. For existing nodes, use 
 $wiki->toggle_node_moderation to change the node moderation flag.
 
-Returns 1 on success, 0 on conflict, croaks on error.
+Returns the version of the updated node on success, 0 on conflict, croaks on
+error.
 
 B<Note> on the metadata hashref: Any data in here that you wish to
 access directly later must be a key-value pair in which the value is
@@ -852,7 +853,7 @@ sub write_node {
     if ($search and $content) {
         $search->index_node($node, $store->charset_encode($content) );
     }
-    return 1;
+    return $ret;
 }
 
 =item B<format>
@@ -1040,6 +1041,16 @@ The developer web site and bug tracker is at
 
 You could also subscribe to the dev list at
   http://www.earth.li/cgi-bin/mailman/listinfo/cgi-wiki-dev
+
+=head1 BUGS
+
+Versions between 0.75 and 0.77 inclusive contain a bug which prevents
+Recent Changes routines from working correctly if minor changes are excluded
+<http://www.wiki-toolkit.org/ticket/41>. You may wish to avoid upgrading to
+this version until it is fixed if this is important to you; the fix is
+however not trivial so noone has been able to step up yet.
+
+Other minor bugs are documented at <http://www.wiki-toolkit.org/report>
 
 =head1 CREDITS
 

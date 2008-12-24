@@ -95,6 +95,7 @@ sub _init {
     if ( $args{dbh} ) {
         $self->{_dbh} = $args{dbh};
         $self->{_external_dbh} = 1; # don't disconnect at DESTROY time
+        $self->{_charset} = $args{charset} || "iso-8859-1";
     } else {
         die "Must supply a dbname" unless defined $args{dbname};
         $self->{_dbname} = $args{dbname};
@@ -175,6 +176,8 @@ contents of the node plus additional data:
 
 =item B<metadata> - a reference to a hash containing any caller-supplied
 metadata sent along the last time the node was written
+
+=back
 
 The node parameter is mandatory. The version parameter is optional and
 defaults to the newest version. If the node hasn't been created yet,
@@ -281,14 +284,21 @@ sub _retrieve_node_content {
     return %data;
 }
 
-# Expects a hash as returned by ->retrieve_node
+# Expects a hash as returned by ->retrieve_node - it's actually slightly lax
+# in this, in that while ->retrieve_node always wraps up the metadata values in
+# (refs to) arrays, this method will accept scalar metadata values too.
 sub _checksum {
     my ($self, %node_data) = @_;
     my $string = $node_data{content};
     my %metadata = %{ $node_data{metadata} || {} };
     foreach my $key ( sort keys %metadata ) {
-        $string .= "\0\0\0" . $key . "\0\0"
-                 . join("\0", sort @{$metadata{$key}} );
+        $string .= "\0\0\0" . $key . "\0\0";
+        my $val = $metadata{$key};
+        if ( ref $val eq "ARRAY" ) {
+            $string .= join("\0", sort @$val );
+        } else {
+            $string .= $val;
+        }
     }
     return md5_hex($self->charset_encode($string));
 }
@@ -450,7 +460,11 @@ C<version>, C<content>, C<metadata>.
 Making sure that locking/unlocking/transactions happen is left up to
 you (or your chosen subclass). This method shouldn't really be used
 directly as it might overwrite someone else's changes. Croaks on error
-but otherwise returns true.
+but otherwise returns the version number of the update just made.  A
+return value of -1 indicates that the change was not applied.  This
+may be because the plugins voted against the change, or because the
+content and metadata in the proposed new version were identical to the
+current version (a "null" change).
 
 Supplying a ref to an array of nodes that this ones links to is
 optional, but if you do supply it then this node will be returned when
@@ -510,6 +524,11 @@ sub write_node_post_locking {
     }
     if($write_allowed < 1) {
         # The plugins didn't want to allow this action
+        return -1;
+    }
+
+    if ( $self->_checksum( %args ) eq $args{checksum} ) {
+        # Refuse to commit as nothing has changed
         return -1;
     }
 
@@ -657,7 +676,7 @@ sub write_node_post_locking {
         }
     }
 
-    return 1;
+    return $version;
 }
 
 # Returns the timestamp of now, unless epoch is supplied.
@@ -1949,21 +1968,99 @@ sub list_last_version_before {
     return @nodes;
 }
 
+
+# Internal function only, used when querying latest metadata
+sub _current_node_id_versions {
+    my ($self) = @_;
+
+    my $dbh = $self->dbh;
+
+    my $nv_sql = 
+       "SELECT node_id, MAX(version) ".
+       "FROM content ".
+       "WHERE moderated ".
+       "GROUP BY node_id ";
+    my $sth = $dbh->prepare( $nv_sql );
+    $sth->execute();
+
+    my @nv_where;
+    while(my @results = $sth->fetchrow_array) {
+        my ($node_id, $version) = @results;
+        my $where = "(node_id=$node_id AND version=$version)";
+        push @nv_where, $where;
+    }
+    return @nv_where;
+}
+
 =item B<list_metadata_by_type>
 
     List all the currently defined values of the given type of metadata.
 
-    Will only work with the latest moderated version
+    Will only return data from the latest moderated version of each node
 
     # List all of the different metadata values with the type 'category'
     my @categories = $wiki->list_metadata_by_type('category');
 
 =cut
-
 sub list_metadata_by_type {
     my ($self, $type) = @_;
 
-    return 0 unless $type;
+    return undef unless $type;
+    my $dbh = $self->dbh;
+
+    # Ideally we'd do this as one big query
+    # However, this would need a temporary table on many
+    #  database engines, so we cheat and do it as two
+    my @nv_where = $self->_current_node_id_versions();
+
+    # Now the metadata bit
+    my $sql = 
+       "SELECT DISTINCT metadata_value ".
+       "FROM metadata ".
+       "WHERE metadata_type = ? ".
+       "AND (".
+       join(" OR ", @nv_where).
+       ")";
+    my $sth = $dbh->prepare( $sql );
+    $sth->execute($type);
+
+    my $values = $sth->fetchall_arrayref([0]);
+    return ( map { $self->charset_decode( $_->[0] ) } (@$values) );
+}
+
+
+=item B<list_metadata_names>
+
+    List all the currently defined kinds of metadata, eg Locale, Postcode
+
+    Will only return data from the latest moderated version of each node
+
+    # List all of the different kinds of metadata
+    my @metadata_types = $wiki->list_metadata_names()
+
+=cut
+sub list_metadata_names {
+    my ($self) = @_;
+
+    my $dbh = $self->dbh;
+
+    # Ideally we'd do this as one big query
+    # However, this would need a temporary table on many
+    #  database engines, so we cheat and do it as two
+    my @nv_where = $self->_current_node_id_versions();
+
+    # Now the metadata bit
+    my $sql = 
+       "SELECT DISTINCT metadata_type ".
+       "FROM metadata ".
+       "WHERE (".
+       join(" OR ", @nv_where).
+       ")";
+    my $sth = $dbh->prepare( $sql );
+    $sth->execute();
+
+    my $types = $sth->fetchall_arrayref([0]);
+    return ( map { $self->charset_decode( $_->[0] ) } (@$types) );
 }
 
 
