@@ -1,3 +1,8 @@
+0.78    16 December 2009
+        Fix various POD errors and add POD testing (#45)
+        More recent changes tests (for #41)
+        Fix transaction handling in SQLite backend (#49)
+
 0.77    24 December 2008
         Complete support for store->list_metadata_by_type, which
           returns a list of all the metadata values
