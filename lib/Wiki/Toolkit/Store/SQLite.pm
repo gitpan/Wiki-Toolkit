@@ -8,7 +8,7 @@ use Wiki::Toolkit::Store::Database;
 use Carp qw/carp croak/;
 
 @ISA = qw( Wiki::Toolkit::Store::Database );
-$VERSION = 0.05;
+$VERSION = 0.06;
 
 =head1 NAME
 
@@ -46,8 +46,6 @@ sub new {
     return $self->_init(%args);
 }
 
-=over 4
-
 =item B<check_and_write_node>
 
   $store->check_and_write_node( node     => $node,
@@ -58,6 +56,8 @@ Locks the node, verifies the checksum, calls
 C<write_node_post_locking> with all supplied arguments, unlocks the
 node. Returns the version of the updated node on successful writing, 0 if
 checksum doesn't match, -1 if the change was not applied, croaks on error.
+
+=back
 
 =cut
 
@@ -85,6 +85,18 @@ sub check_and_write_node {
         $dbh->commit;
         return $ok;
     }
+}
+
+# Get the attributes for the database connection.  We set
+# sqlite_use_immediate_transaction to false because we use database locking
+# explicitly in check_and_write_node.  This is required for DBD::SQLite 1.38.
+sub _get_dbh_connect_attr {
+    my $self = shift;
+    my $attrs = $self->SUPER::_get_dbh_connect_attr;
+    return {
+             %$attrs,
+             sqlite_use_immediate_transaction => 0
+    };
 }
 
 sub _get_lowercase_compare_sql {

@@ -1,3 +1,8 @@
+0.81    25 May 2013
+        Fix compatibility with DBD::SQLite 1.83+ (RT#84680)
+        Added a backend for searching with Lucy - Wiki::Toolkit::Search::Lucy
+        Fix POD errors which are fatal with perl 5.18.
+
 0.80    3 May 2012
         Spelling fix in Wiki::Toolkit::Search::Base
         Fixed deprecated use of foreach ... qw (fixes #53 and #54)

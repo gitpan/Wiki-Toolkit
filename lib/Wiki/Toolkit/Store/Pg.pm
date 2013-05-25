@@ -8,7 +8,7 @@ use Wiki::Toolkit::Store::Database;
 use Carp qw/carp croak/;
 
 @ISA = qw( Wiki::Toolkit::Store::Database );
-$VERSION = 0.06;
+$VERSION = 0.07;
 
 =head1 NAME
 
@@ -47,6 +47,8 @@ Locks the node, verifies the checksum, calls
 C<write_node_post_locking> with all supplied arguments, unlocks the
 node. Returns the version of the updated node on successful writing, 0 if
 checksum doesn't match, -1 if the change was not applied, croaks on error.
+
+=back
 
 =cut
 

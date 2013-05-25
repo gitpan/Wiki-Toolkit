@@ -13,7 +13,7 @@ use Plucene::Search::HitCollector;
 
 use vars qw( @ISA $VERSION );
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 use base 'Wiki::Toolkit::Search::Base';
 
 =head1 NAME
@@ -81,12 +81,19 @@ sub _writer {
         );
 }
 
+sub _index_exists {
+    my $self = shift;
+    if ( -e catfile($self->_dir, "segments") ) {
+        return 1;
+    }
+}
+
 sub _search_nodes {
     my ($self, $query, $and_or) = @_;
+
     # Bail and return empty list if nothing stored in directory.
-    if ( ! -e catfile($self->_dir, "segments") ) {
-        return ();
-    }
+    return () unless $self->_index_exists;
+
     local $Plucene::QueryParser::DefaultOperator = "AND"
         unless ( $and_or and lc($and_or) eq "or" );
     my @docs;
@@ -118,6 +125,10 @@ sub _fuzzy_match {
 
 sub index_node {
     my ($self, $node, $content) = @_;
+
+    # Delete the old version.
+    $self->delete_node( $node );
+
     my $writer = $self->_writer;
     my $doc    = Plucene::Document->new;
     my $fuzzy = $self->canonicalise_title( $node );
@@ -139,6 +150,7 @@ sub indexed {
 
 sub delete_node {
     my ($self, $id) = @_;
+    return unless $self->_index_exists;
     my $reader = $self->_reader;
     $reader->delete_term(
                  Plucene::Index::Term->new({ field => "id", text => $id }));

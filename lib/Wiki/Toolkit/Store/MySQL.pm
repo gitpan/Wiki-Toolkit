@@ -8,7 +8,7 @@ use Wiki::Toolkit::Store::Database;
 use Carp qw/carp croak/;
 
 @ISA = qw( Wiki::Toolkit::Store::Database );
-$VERSION = 0.04;
+$VERSION = 0.05;
 
 =head1 NAME
 
@@ -51,6 +51,8 @@ checksum doesn't match, -1 if the change was not applied, croaks on error.
 Note:  Uses MySQL's user level locking, so any locks are released when
 the database handle disconnects.  Doing it like this because I can't seem
 to get it to work properly with transactions.
+
+=back
 
 =cut
 

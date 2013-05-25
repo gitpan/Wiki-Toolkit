@@ -11,7 +11,7 @@ use Time::Seconds;
 use Carp qw( carp croak );
 use Digest::MD5 qw( md5_hex );
 
-$VERSION = '0.30';
+$VERSION = '0.31';
 my $SCHEMA_VER = 10;
 
 # first, detect if Encode is available - it's not under 5.6. If we _are_
@@ -111,8 +111,7 @@ sub _init {
         my $dsn = $self->_dsn($dbname, $dbhost, $dbport)
             or croak "No data source string provided by class";
         $self->{_dbh} = DBI->connect( $dsn, $dbuser, $dbpass,
-                      { PrintError => 0, RaiseError => 1,
-                        AutoCommit => 1 } )
+                                      $self->_get_dbh_connect_attr )
             or croak "Can't connect to database $dbname using $dsn: "
                    . DBI->errstr;
     }
@@ -125,6 +124,16 @@ sub _init {
     }
 
     return $self;
+}
+
+# Internal method to get attributes for passing to DBI->connect().
+# Override in subclasses to add database-dependent attributes.
+sub _get_dbh_connect_attr {
+    return {
+             PrintError => 0,
+             RaiseError => 1,
+             AutoCommit => 1,
+    };
 }
 
 # Internal method, used to handle the logic of how to add up return
@@ -1050,7 +1059,8 @@ sub delete_node {
     # Skip out early if we're trying to delete a nonexistent version.
     my %verdata = $self->retrieve_node( name => $name, version => $version );
     unless($verdata{version}) {
-        warn("Asked to delete non existant version $version of node $node_id ($name)");
+        warn( "Asked to delete nonexistent version $version of node "
+               . "$node_id ($name)" );
         return 1;
     }
 
@@ -2201,5 +2211,9 @@ sub charset_encode {
     }
     return @input;
 }
+
+=back
+
+=cut
 
 1;
