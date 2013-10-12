@@ -14,10 +14,10 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 6f00187e43c2db9df70d47a2cf014c28065ca49d Changes
+SHA1 20d6678c48843cd6e4f4b059941d1b96db271fdf Changes
 SHA1 eef58741b82a1f029e62cc854755dfc2f4ada7b5 INSTALL
 SHA1 e83d3267acebef35253196bf56d87b92587cc8bf MANIFEST
-SHA1 161f6378a6f058f40906471d1fed7a273b3cc864 META.yml
+SHA1 54eb1a8e1c8c0dabb9459097aa743cc74ea9450c META.yml
 SHA1 a1187153911d49c7d72656d050eed633ee220cff Makefile.PL
 SHA1 0c94c05497c37c21a91b89eb94ba2ae2b6c9199d README
 SHA1 b609af99f3e2315da9a65c50f0b6744d61bcd0bc bin/user-setup-mysql-dbixfts.pl
@@ -25,7 +25,7 @@ SHA1 e57ba0b4eaa405246ff6768507c2dff380e4988f bin/wiki-toolkit-delete-node
 SHA1 b0e09c8a7380cf28e0745f5067d199bf600297d8 bin/wiki-toolkit-rename-node
 SHA1 8c77175cffbc7941daa59e3d932d8dbca494a8e3 bin/wiki-toolkit-revert-to-date
 SHA1 53224377b164bfd46034f6e3749c96d9c7fe97ad bin/wiki-toolkit-setupdb
-SHA1 678e71adcf3e8557d174a94413c739cf7fb6fae0 lib/Wiki/Toolkit.pm
+SHA1 91c091f080850db39192ae94859e9b58ba75a887 lib/Wiki/Toolkit.pm
 SHA1 d94d5a76e824fa260e726fbcd256d7b8709d8f00 lib/Wiki/Toolkit/Extending.pod
 SHA1 c1fca2977999ad797368106c96aa7257b71e86b4 lib/Wiki/Toolkit/Feed/Atom.pm
 SHA1 9705573a60cb8ebc17dc7939c67207b52e44c722 lib/Wiki/Toolkit/Feed/Listing.pm
@@ -36,7 +36,7 @@ SHA1 0a52d967a3065ce98dd7350d03f6407b19a6f1bc lib/Wiki/Toolkit/Formatter/WikiLin
 SHA1 977a1604f01d3ea74e95b90b3235fd6b25a3eae6 lib/Wiki/Toolkit/Plugin.pm
 SHA1 3efb701b0849ec4f18c9246730442987f7c12fa1 lib/Wiki/Toolkit/Search/Base.pm
 SHA1 d66d0d743a74b2b5a86c251d6fd5a3d4c9777a3b lib/Wiki/Toolkit/Search/DBIxFTS.pm
-SHA1 e79b2edee15f2345e2f92e103e982598f15be48c lib/Wiki/Toolkit/Search/Lucy.pm
+SHA1 f8b380d6506c4902613cddf87492e1f7df589b59 lib/Wiki/Toolkit/Search/Lucy.pm
 SHA1 0bcc09a90349b723f5d6c4a945ecf05c7b0f3cbc lib/Wiki/Toolkit/Search/Plucene.pm
 SHA1 9e4b253033b5e5546d1fc2ad208893beffe4b11f lib/Wiki/Toolkit/Search/SII.pm
 SHA1 1ca6436c912d89042e7c4fb6e91c2f5e782e1384 lib/Wiki/Toolkit/Setup/DBIxFTSMySQL.pm
@@ -105,7 +105,7 @@ SHA1 5ba3e2fa69ad7ca30aa726289275e1e2f7220fc6 t/lib/Wiki/Toolkit/Plugin/Foo.pm
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iD8DBQFRoPJaYzuFKFF44qURAh7uAJ40tBRV/fBmRnbDzIkrb9y/+LE+CwCfQYY3
-cnWYlY3Bq0WLc7i8BOsskN8=
-=ay6i
+iD8DBQFSWSVWYzuFKFF44qURAkvGAKCgkJD4l9kKZUQzSmHmtvAatR5kmACgk8y9
+fKejS2eTEch8qWabJTmFjuk=
+=cYpL
 -----END PGP SIGNATURE-----
