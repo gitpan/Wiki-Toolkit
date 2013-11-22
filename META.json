@@ -1,0 +1,48 @@
+{
+   "abstract" : "unknown",
+   "author" : [
+      "unknown"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "ExtUtils::MakeMaker version 6.82, CPAN::Meta::Converter version 2.120351",
+   "license" : [
+      "unknown"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Wiki-Toolkit",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "inc"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "DBD::SQLite" : "0.25",
+            "DBI" : "0",
+            "Digest::MD5" : "0",
+            "HTML::PullParser" : "0",
+            "Plucene" : "1.19",
+            "Test::More" : "0",
+            "Text::WikiFormat" : "0.78",
+            "Time::Piece" : "0"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "version" : "0.83"
+}

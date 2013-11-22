@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.68.
+signed via the Module::Signature module, version 0.73.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,10 +14,11 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 20d6678c48843cd6e4f4b059941d1b96db271fdf Changes
+SHA1 01c798449c7fe70eb92708f8661edd7cc68b3ee2 Changes
 SHA1 eef58741b82a1f029e62cc854755dfc2f4ada7b5 INSTALL
-SHA1 e83d3267acebef35253196bf56d87b92587cc8bf MANIFEST
-SHA1 54eb1a8e1c8c0dabb9459097aa743cc74ea9450c META.yml
+SHA1 e61eb1cb36dce85df76485098efec4fdfcdcf5e6 MANIFEST
+SHA1 9c30128790059b6ba5b5d004520f830252a81da0 META.json
+SHA1 eeb85b085057ff9a29258d139497a29bef730c75 META.yml
 SHA1 a1187153911d49c7d72656d050eed633ee220cff Makefile.PL
 SHA1 0c94c05497c37c21a91b89eb94ba2ae2b6c9199d README
 SHA1 b609af99f3e2315da9a65c50f0b6744d61bcd0bc bin/user-setup-mysql-dbixfts.pl
@@ -25,7 +26,7 @@ SHA1 e57ba0b4eaa405246ff6768507c2dff380e4988f bin/wiki-toolkit-delete-node
 SHA1 b0e09c8a7380cf28e0745f5067d199bf600297d8 bin/wiki-toolkit-rename-node
 SHA1 8c77175cffbc7941daa59e3d932d8dbca494a8e3 bin/wiki-toolkit-revert-to-date
 SHA1 53224377b164bfd46034f6e3749c96d9c7fe97ad bin/wiki-toolkit-setupdb
-SHA1 91c091f080850db39192ae94859e9b58ba75a887 lib/Wiki/Toolkit.pm
+SHA1 b9ca9b5aaea01cb13d167588a5106c1d45a2f80c lib/Wiki/Toolkit.pm
 SHA1 d94d5a76e824fa260e726fbcd256d7b8709d8f00 lib/Wiki/Toolkit/Extending.pod
 SHA1 c1fca2977999ad797368106c96aa7257b71e86b4 lib/Wiki/Toolkit/Feed/Atom.pm
 SHA1 9705573a60cb8ebc17dc7939c67207b52e44c722 lib/Wiki/Toolkit/Feed/Listing.pm
@@ -34,9 +35,9 @@ SHA1 58be3b135711f9abfea1c3715713730e1c8cddc8 lib/Wiki/Toolkit/Formatter/Default
 SHA1 841470aa33e8287e436c6f4680b23a395bad2d43 lib/Wiki/Toolkit/Formatter/Multiple.pm
 SHA1 0a52d967a3065ce98dd7350d03f6407b19a6f1bc lib/Wiki/Toolkit/Formatter/WikiLinkFormatterParent.pm
 SHA1 977a1604f01d3ea74e95b90b3235fd6b25a3eae6 lib/Wiki/Toolkit/Plugin.pm
-SHA1 3efb701b0849ec4f18c9246730442987f7c12fa1 lib/Wiki/Toolkit/Search/Base.pm
+SHA1 e76d7723c0826e2df9d3d218f1734346a01d8d43 lib/Wiki/Toolkit/Search/Base.pm
 SHA1 d66d0d743a74b2b5a86c251d6fd5a3d4c9777a3b lib/Wiki/Toolkit/Search/DBIxFTS.pm
-SHA1 f8b380d6506c4902613cddf87492e1f7df589b59 lib/Wiki/Toolkit/Search/Lucy.pm
+SHA1 1fae5553755f5b3d2186e94a26220c12c5d78d6d lib/Wiki/Toolkit/Search/Lucy.pm
 SHA1 0bcc09a90349b723f5d6c4a945ecf05c7b0f3cbc lib/Wiki/Toolkit/Search/Plucene.pm
 SHA1 9e4b253033b5e5546d1fc2ad208893beffe4b11f lib/Wiki/Toolkit/Search/SII.pm
 SHA1 1ca6436c912d89042e7c4fb6e91c2f5e782e1384 lib/Wiki/Toolkit/Setup/DBIxFTSMySQL.pm
@@ -50,7 +51,7 @@ SHA1 24c27460c4e406b0c0152b9524f59cabaa7fdbfc lib/Wiki/Toolkit/Store/MySQL.pm
 SHA1 930fd48491c98860d76b8a54f07226ea0e601b35 lib/Wiki/Toolkit/Store/Pg.pm
 SHA1 87f87e00d4505653acffb0c60c2e547c4e496add lib/Wiki/Toolkit/Store/SQLite.pm
 SHA1 ffb913278dfdf3dcd218df1b8eef34a3b49bec8a lib/Wiki/Toolkit/TestConfig/Utilities.pm
-SHA1 69b1d2e03bca9476fc3acffce778b6847db3b5a6 lib/Wiki/Toolkit/TestLib.pm
+SHA1 728709ea39831912e55dc14829e470476a605a71 lib/Wiki/Toolkit/TestLib.pm
 SHA1 42e299ea6ea7e8196bed2a27b9c2ff1bedfdcfdd t/001_load.t
 SHA1 2a3dcdf422275c94003924b96528fd6cd36d9c32 t/002_datastore_setup.t
 SHA1 2297741bce71cd8019f073fa6300a378b7355764 t/003_instantiate.t
@@ -100,12 +101,20 @@ SHA1 44a9dd3d35623b6814f73d8b9ae3d28a008685d7 t/304_feed_atom_gen_node_dist_feed
 SHA1 677cefac48fec94b52c8374065f12d6571cbc8a4 t/400_upgrade.t
 SHA1 c41e905ec9c1f9b421cc3fa517084f883a67dd3c t/401_null_change.t
 SHA1 61e28ddd05ab0f3722f2a8cdce80a8f314b86391 t/500_pod.t
+SHA1 380e8a31c59fdff6fdfb520dbac077e5a19fd660 t/700_lucy_bug.t
+SHA1 f9e3379a88e74fadd003718a775cb124d4f01797 t/701_lucy_setup.t
+SHA1 c20f21c6b2fe3329a1a4db7c42d202cf6c2ceb39 t/702_metadata_search.t
+SHA1 86b5cd9b1fc5bf513b7005ec13958d107945951c t/703_search_weightings.t
 SHA1 0944b423c21abacdd290e2c035b58b9a3f72f686 t/lib/Wiki/Toolkit/Plugin/Bar.pm
 SHA1 5ba3e2fa69ad7ca30aa726289275e1e2f7220fc6 t/lib/Wiki/Toolkit/Plugin/Foo.pm
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iD8DBQFSWSVWYzuFKFF44qURAkvGAKCgkJD4l9kKZUQzSmHmtvAatR5kmACgk8y9
-fKejS2eTEch8qWabJTmFjuk=
-=cYpL
+iQEcBAEBAgAGBQJSj+FTAAoJEJsOndGQ5lgDMHoH/2yTCmkiyZBJCVW5/uFQ1zvC
+dfLUWPd0R6TYPqHH0ysPd0PO+PDL0a2emqQ6+cBBpBPuCfB5EIGxH0WnmyxQ16o5
+uHX2mGYZBtsjYR35PgfEyo2XpA3ZR42ehc/3nsFozrN05owDIRHc3GVdgFio/kzR
+J8FJWxxzuLjla0fvjFkW7wNP1CSCoKTi5/TofZEzgUclgfuXwVv4rZYIjtt/msRS
+X6S73oeXX+Mn42aYntm1U/zyM3VGCMUAj+A/JnOVFnWWaKa5kWUfX8m1/Nbjh5/a
+GhQrxIH9Zf5sdJH621fRM3y3+ysg4VkeBks5AtwdXdcXYegSfGElB3vUwDQOqzA=
+=Uagh
 -----END PGP SIGNATURE-----

@@ -12,7 +12,7 @@ use Lucy::Search::QueryParser;
 
 use vars qw( @ISA $VERSION );
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 use base 'Wiki::Toolkit::Search::Base';
 
 =head1 NAME
@@ -34,10 +34,21 @@ Provides L<Lucy>-based search methods for L<Wiki::Toolkit>.
 
 =item B<new>
 
-  my $search = Wiki::Toolkit::Search::Lucy->new( path => "/var/lucy/wiki" );
+  my $search = Wiki::Toolkit::Search::Lucy->new(
+      path => "/var/lucy/wiki",
+      metadata_fields => [ "category", "locale", "address" ],
+      boost => { title => 2.5 } );
 
-Takes only one parameter, which is mandatory. C<path> must be a directory
+The C<path> parameter is mandatory. C<path> must be a directory
 for storing the indexed data.  It should exist and be writeable.
+
+The C<metadata_fields> parameter is optional.  It should be a reference
+to an array of metadata field names.
+
+The C<boost> parameter is also optional.  It should be a reference to
+a hash in which the keys are fields and the values are numbers - see
+L<Lucy::Plan::FieldType> for more info.  Only C<title> is currently
+supported as a field value.
 
 =cut
 
@@ -52,12 +63,24 @@ sub _init {
                           analyzer => $polyanalyzer );
     my $unstored_type = Lucy::Plan::FullTextType->new(
                           analyzer => $polyanalyzer, stored => 0 );
+    my %title_args = ( analyzer => $polyanalyzer, stored => 1 );
+    if ( $args{boost}{title} ) {
+        $title_args{boost} = $args{boost}{title};
+    }
+    my $title_type = Lucy::Plan::FullTextType->new( %title_args );
+                          
     $schema->spec_field( name => "content", type => $unstored_type );
     $schema->spec_field( name => "fuzzy",   type => $unstored_type );
-    $schema->spec_field( name => "title",   type => $stored_type );
+    $schema->spec_field( name => "title",   type => $title_type );
+    $schema->spec_field( name => "key",     type => $stored_type );
+
+    foreach my $md_field ( @{$args{metadata_fields}} ) {
+        $schema->spec_field( name => $md_field, type => $unstored_type );
+    }
 
     $self->{_schema} = $schema;
     $self->{_dir} = $args{path};
+    $self->{_metadata_fields} = $args{metadata_fields};
     return $self;
 }
 
@@ -66,15 +89,26 @@ sub _schema { shift->{_schema} }
 
 =item B<index_node>
 
-  $search->index_node( $node, $content );
+  $search->index_node( $node, $content, $metadata );
 
 Indexes or reindexes the given node in the search engine indexes. 
-You must supply both the node name and its content.
+You must supply both the node name and its content, but metadata is optional.
+
+If you do supply metadata, it should be a reference to a hash where
+the keys are the names of the metadata fields and the values are
+either scalars or references to arrays of scalars.  For example:
+
+  $search->index_node( "Calthorpe Arms", "Nice pub in Bloomsbury.",
+                       { category => [ "Pubs", "Bloomsbury" ],
+                         postcode => "WC1X 8JR" } );
+
+Only those metadata fields which were supplied to ->new will be taken
+notice of - others will be silently ignored.
 
 =cut
 
 sub index_node {
-    my ( $self, $node, $content ) = @_;
+    my ( $self, $node, $content, $metadata ) = @_;
 
     # Delete the old version.
     $self->_delete_node( $node );
@@ -86,12 +120,29 @@ sub index_node {
         truncate => 0,
     );
 
+    my $key = $self->_make_key( $node );
     my $fuzzy = $self->canonicalise_title( $node );
-    $indexer->add_doc( {
+
+    my %data = (
         content => join( " ", $node, $content ),
         fuzzy   => $fuzzy,
         title   => $node,
-    } );
+        key     => $key,
+    );
+
+    my @fields = @{$self->{_metadata_fields}};
+    foreach my $field ( @fields ) {
+        my $value = $metadata->{$field};
+        if ( $value ) {
+            if ( ref $value ) {
+                $data{$field} = join( " ", @$value );
+            } else {
+                $data{$field} = $value;
+            }
+        }
+    }
+
+    $indexer->add_doc( \%data );
     $indexer->commit;
 }
 
@@ -104,8 +155,19 @@ sub _delete_node {
         create   => 1,
         truncate => 0,
     );
-    $indexer->delete_by_term( field => "title", term => $node );
+
+    my $key = $self->_make_key( $node );
+
+    $indexer->delete_by_term( field => "key", term => $key );
     $indexer->commit;
+}
+
+# We need to make a unique key for when we come to delete a doc - can't just
+# delete on title as it does a search rather than an exact match on the field.
+sub _make_key {
+    my ( $self, $node ) = @_;
+    $node =~ s/\s//g;
+    return lc( $node );
 }
 
 =item B<search_nodes>
@@ -196,6 +258,7 @@ sub _index_exists {
 
 sub supports_fuzzy_searches { 1; }
 sub supports_phrase_searches { 1; }
+sub supports_metadata_indexing { 1; }
 
 =back
 
