@@ -18,12 +18,15 @@ no_index:
     - t
     - inc
 requires:
+  DBD::Pg: 0
   DBD::SQLite: 0.25
+  DBD::mysql: 0
   DBI: 0
+  DBIx::FullTextSearch: 0.71
   Digest::MD5: 0
   HTML::PullParser: 0
   Plucene: 1.19
   Test::More: 0
   Text::WikiFormat: 0.78
   Time::Piece: 0
-version: 0.83
+version: 0.84

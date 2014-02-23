@@ -14,11 +14,11 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 01c798449c7fe70eb92708f8661edd7cc68b3ee2 Changes
+SHA1 b5494b713c8812a37abab43c02f9c19fec2263e7 Changes
 SHA1 eef58741b82a1f029e62cc854755dfc2f4ada7b5 INSTALL
-SHA1 e61eb1cb36dce85df76485098efec4fdfcdcf5e6 MANIFEST
-SHA1 9c30128790059b6ba5b5d004520f830252a81da0 META.json
-SHA1 eeb85b085057ff9a29258d139497a29bef730c75 META.yml
+SHA1 68934db09105a239a787dd59d7b8e33ddc1a32f5 MANIFEST
+SHA1 f93c958235de1b0a21ff53ace1e621d81b1063bf META.json
+SHA1 ce8f3f97db54bbd727b5fa405ad462cb1f51f01c META.yml
 SHA1 a1187153911d49c7d72656d050eed633ee220cff Makefile.PL
 SHA1 0c94c05497c37c21a91b89eb94ba2ae2b6c9199d README
 SHA1 b609af99f3e2315da9a65c50f0b6744d61bcd0bc bin/user-setup-mysql-dbixfts.pl
@@ -26,7 +26,7 @@ SHA1 e57ba0b4eaa405246ff6768507c2dff380e4988f bin/wiki-toolkit-delete-node
 SHA1 b0e09c8a7380cf28e0745f5067d199bf600297d8 bin/wiki-toolkit-rename-node
 SHA1 8c77175cffbc7941daa59e3d932d8dbca494a8e3 bin/wiki-toolkit-revert-to-date
 SHA1 53224377b164bfd46034f6e3749c96d9c7fe97ad bin/wiki-toolkit-setupdb
-SHA1 b9ca9b5aaea01cb13d167588a5106c1d45a2f80c lib/Wiki/Toolkit.pm
+SHA1 05214adb05fb153797d9afc32ea5b385d3ea6e3a lib/Wiki/Toolkit.pm
 SHA1 d94d5a76e824fa260e726fbcd256d7b8709d8f00 lib/Wiki/Toolkit/Extending.pod
 SHA1 c1fca2977999ad797368106c96aa7257b71e86b4 lib/Wiki/Toolkit/Feed/Atom.pm
 SHA1 9705573a60cb8ebc17dc7939c67207b52e44c722 lib/Wiki/Toolkit/Feed/Listing.pm
@@ -37,8 +37,8 @@ SHA1 0a52d967a3065ce98dd7350d03f6407b19a6f1bc lib/Wiki/Toolkit/Formatter/WikiLin
 SHA1 977a1604f01d3ea74e95b90b3235fd6b25a3eae6 lib/Wiki/Toolkit/Plugin.pm
 SHA1 e76d7723c0826e2df9d3d218f1734346a01d8d43 lib/Wiki/Toolkit/Search/Base.pm
 SHA1 d66d0d743a74b2b5a86c251d6fd5a3d4c9777a3b lib/Wiki/Toolkit/Search/DBIxFTS.pm
-SHA1 1fae5553755f5b3d2186e94a26220c12c5d78d6d lib/Wiki/Toolkit/Search/Lucy.pm
-SHA1 0bcc09a90349b723f5d6c4a945ecf05c7b0f3cbc lib/Wiki/Toolkit/Search/Plucene.pm
+SHA1 7ca86c4e93b9c030e392872157b184bffb5d9b7f lib/Wiki/Toolkit/Search/Lucy.pm
+SHA1 7c160f1f45417e83c9cb0e4e2df5f1e371a3e925 lib/Wiki/Toolkit/Search/Plucene.pm
 SHA1 9e4b253033b5e5546d1fc2ad208893beffe4b11f lib/Wiki/Toolkit/Search/SII.pm
 SHA1 1ca6436c912d89042e7c4fb6e91c2f5e782e1384 lib/Wiki/Toolkit/Setup/DBIxFTSMySQL.pm
 SHA1 84c0431f366bec41a136de78c54841400ff98f50 lib/Wiki/Toolkit/Setup/Database.pm
@@ -105,16 +105,18 @@ SHA1 380e8a31c59fdff6fdfb520dbac077e5a19fd660 t/700_lucy_bug.t
 SHA1 f9e3379a88e74fadd003718a775cb124d4f01797 t/701_lucy_setup.t
 SHA1 c20f21c6b2fe3329a1a4db7c42d202cf6c2ceb39 t/702_metadata_search.t
 SHA1 86b5cd9b1fc5bf513b7005ec13958d107945951c t/703_search_weightings.t
+SHA1 82c6a9d000d457718bf955b45a8c96f82ea0c52b t/704_search_content_munging.t
+SHA1 bd4c5dc9cd2f906aceadeaef2ff94a12545c0c3e t/705_search_exclusion.t
 SHA1 0944b423c21abacdd290e2c035b58b9a3f72f686 t/lib/Wiki/Toolkit/Plugin/Bar.pm
 SHA1 5ba3e2fa69ad7ca30aa726289275e1e2f7220fc6 t/lib/Wiki/Toolkit/Plugin/Foo.pm
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQEcBAEBAgAGBQJSj+FTAAoJEJsOndGQ5lgDMHoH/2yTCmkiyZBJCVW5/uFQ1zvC
-dfLUWPd0R6TYPqHH0ysPd0PO+PDL0a2emqQ6+cBBpBPuCfB5EIGxH0WnmyxQ16o5
-uHX2mGYZBtsjYR35PgfEyo2XpA3ZR42ehc/3nsFozrN05owDIRHc3GVdgFio/kzR
-J8FJWxxzuLjla0fvjFkW7wNP1CSCoKTi5/TofZEzgUclgfuXwVv4rZYIjtt/msRS
-X6S73oeXX+Mn42aYntm1U/zyM3VGCMUAj+A/JnOVFnWWaKa5kWUfX8m1/Nbjh5/a
-GhQrxIH9Zf5sdJH621fRM3y3+ysg4VkeBks5AtwdXdcXYegSfGElB3vUwDQOqzA=
-=Uagh
+iQEcBAEBAgAGBQJTChSkAAoJEJsOndGQ5lgDwKoIAJYbcIe99Erlqx6rMaVHTohm
+Wjn579bGCbpynRxQRoF74vH3MCM8BE4hRIQworctstleCISpO1P9vON8Zq/osZJv
+IvrbmVb2TWmqttIpjRsqWFNi2jLUAVX0W7/cUUtJmv9bg31u0B7gygycsCTv1vC9
+bUYuE9wfM+ir5qPXqs2Yj2DhciuB+f++E9ZsXGlRLPhSF4ktbtbZaGnwN5dvr9XP
+++sfVH1hP2cGyYoXQvJgo1ZZxEjnQ76XRKUmdy2h7LOPxDddjwGrRywIaOUdqxL8
+OKOamYdYFvG3e0FzG7d168uA2+5UuehHpcZs6+CrTdmOmNbkc13hnzPuf1WCdOM=
+=jfRR
 -----END PGP SIGNATURE-----
